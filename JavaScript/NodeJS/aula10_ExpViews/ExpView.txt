@@ -1,0 +1,30 @@
+Um mecanismo de modelo permite que você use arquivos de modelo estáticos em seu aplicativo. 
+No tempo de execução, o mecanismo de modelo substitui variáveis ​​em um arquivo de modelo por 
+valores reais e transforma o modelo em um arquivo HTML enviado ao cliente. Essa abordagem facilita o design de uma página HTML.
+Alguns mecanismos de modelo populares que funcionam com o Express são Pug , Mustache e EJS.
+
+Para renderizar arquivos de modelo, defina as seguintes propriedades de configuração do aplicativo , definidas no app.js 
+aplicativo padrão criado pelo gerador:
+views, o diretório onde os arquivos de modelo estão localizados. Ex.: app.set('views', './views'). O padrão é o views diretório no diretório raiz do aplicativo.
+view engine, o mecanismo de modelo a ser usado. Por exemplo, para usar o mecanismo de modelo ejs: app.set('view engine', 'ejs').
+Em seguida, instale o pacote npm do mecanismo de modelo correspondente; por exemplo para instalar o ejs -> npm install ejs
+
+Depois que o mecanismo de exibição é definido, você não precisa especificar o mecanismo ou carregar o módulo do mecanismo de modelo 
+em seu aplicativo; O Express carrega o módulo internamente.
+
+app.set('view engine', 'ejs')
+
+Crie um arquivo de modelo Pug nomeado index.pugno viewsdiretório, com o seguinte conteúdo:
+html
+  head
+    title= title
+  body
+    h1= message
+
+Em seguida, crie uma rota para renderizar o index.pugarquivo. Se a view enginepropriedade não estiver definida, você deve especificar a extensão do viewarquivo. Caso contrário, você pode omiti-lo.
+app.get('/', (req, res) => {
+  res.render('index', { title: 'Hey', message: 'Hello there!' })
+})
+Ao fazer uma solicitação à página inicial, o index.pugarquivo será renderizado como HTML.
+Observação: o cache do mecanismo de exibição não armazena em cache o conteúdo da saída do modelo, apenas o próprio modelo subjacente. 
+A visualização ainda é renderizada novamente a cada solicitação, mesmo quando o cache está ativado.

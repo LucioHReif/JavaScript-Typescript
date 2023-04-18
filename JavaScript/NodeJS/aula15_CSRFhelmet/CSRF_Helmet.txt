@@ -1,0 +1,39 @@
+CSRF -> Cross-Site Request Forgery, também conhecido como ataque de um clique ou sessão de surf, é um tipo de 
+ataque malicioso em um aplicativo da web ou site. Nesses tipos de ataques, o invasor realiza solicitações maliciosas 
+em nome da vítima. Há muitas maneiras pelas quais um aplicativo da Web malicioso pode transmitir essas solicitações, 
+como tags de imagem especialmente criadas, formulários ocultos, solicitações AJAX etc. Todas elas funcionam sem a 
+interação ou mesmo conhecimento do usuário.
+
+Enquanto os ataques Cross-Site Scripting (XSS) exploram a confiança que um usuário tem em um determinado aplicativo
+da web, os ataques CSRF exploram a confiança que um aplicativo da web tem no navegador de um determinado usuário.
+Quando um ataque CSRF está sendo executado, a vítima está enviando uma solicitação maliciosa da qual não estava ciente. 
+Isso pode fazer com que ações sejam executadas no aplicativo da web que podem incluir vazamento de dados do cliente ou
+servidor, alteração do estado da sessão ou manipulação da conta de um usuário final.
+
+Os ataques CSRF são um exemplo de um ataque de deputado confuso contra um navegador da web porque o navegador da web 
+é levado a enviar uma solicitação forjada por um invasor com menos privilégios.
+CSRF geralmente tem as seguintes características:
+
+Envolve sites ou aplicativos da web que dependem da identidade de um usuário.
+Explora a confiança do site nessa identidade.
+Engana o navegador do usuário para enviar solicitações HTTP para um site de destino.
+Envolve solicitações HTTP que têm efeitos colaterais.
+Esta é uma visão geral das etapas de um ataque CSRF:
+
+A vítima executa uma ação, como visitar uma página da Web, clicar em um link etc., que é controlada pelo invasor.
+Esta ação envia uma solicitação HTTP para um aplicativo da Web em nome da vítima.
+Se a vítima tiver uma sessão autenticada ativa no aplicativo da Web, a solicitação será processada como uma solicitação 
+legítima enviada pela vítima.
+-----------------------------------------------------------------------------------------------------------------------------------
+
+HELMET -> ajuda a proteger o seu aplicativo de algumas vulnerabilidades da web bastante conhecidas configurando os cabeçalhos HTTP adequadamente.
+O Helmet é na realidade apenas uma coleção de nove funções de middlewares menores que configuram cabeçalhos HTTP relacionados à segurança:
+
+A csp configura o cabeçalho Content-Security-Policy para ajudar a evitar ataques de cross-site scripting e outras injeções cross-site.
+A hidePoweredBy remove o cabeçalho X-Powered-By.
+A hsts configura o cabeçalho Strict-Transport-Security que impinge conexões seguras (HTTP sobre SSL/TLS) com o servidor.
+A ieNoOpen configura o X-Download-Options para o IE8+.
+A noCache configura os cabeçalhos Cache-Control e Pragma para desativar o armazenamento em cache no lado do cliente.
+A noSniff configura o X-Content-Type-Options para evitar que os navegadores procurem por MIME uma resposta a partir do content-type declarado.
+A frameguard configura o cabeçalho X-Frame-Options para fornecer proteção clickjacking.
+A xssFilter configura o X-XSS-Protection para ativar o filtro de Cross-site scripting (XSS) nos navegadores da web mais recentes.

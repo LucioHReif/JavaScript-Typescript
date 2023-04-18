@@ -1,0 +1,153 @@
+** Factory Method ** (Virtual Constructor)
+O Factory Method é um padrão de projeto criacional que fornece uma interface para criar objetos em uma superclasse, mas permite que as subclasses 
+alterem o tipo de objetos que serão criados. 
+- Oculta a lógica de instanciação do código cliente. O método fábrica será responsável por instanciar as classes desejadas
+- É obtido através de herança. O método fábrica pode ser criado ou sobrescrito por subclasses
+- Dá flexibilidade ao código cliente permitindo a criação de novas factories sem a necessidade de alterar código já escrito (OCP)
+- Pode usar parâmetros para determinar o tipo dos objetos a serem criados ou os parâmetros a serem enviados aos objetos sendo criados.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Faça com que todos os produtos sigam a mesma interface. Essa interface deve declarar métodos que façam sentido em cada produto. 
+
+- Adicione um método de fábrica vazio dentro da classe criadora. O tipo de retorno do método deve corresponder à interface comum do produto.
+
+- No código do criador, encontre todas as referências aos construtores do produto. Um por um, substitua-os por chamadas ao método de fábrica, enquanto 
+extrai o código de criação do produto para o método de fábrica. Pode ser necessário adicionar um parâmetro temporário ao método de fábrica para controlar 
+o tipo de produto devolvido. Neste ponto, o código do método de fábrica pode parecer muito feio. Ele pode ter uma grande instrução switch que escolhe qual 
+classe de produto instanciar. Mas não se preocupe, vamos consertar isso em breve.
+
+- Agora, crie um conjunto de subclasses criadoras para cada tipo de produto listado no método de fábrica. Substitua o método de fábrica nas subclasses e 
+extraia os bits apropriados do código de construção do método base.
+
+- Se houver muitos tipos de produtos e não fizer sentido criar subclasses para todos eles, você pode reutilizar o parâmetro de controle da classe base 
+em subclasses. Por exemplo, imagine que você tenha a seguinte hierarquia de classes: a classe base Mail com algumas subclasses: AirMail e GroundMail; 
+as classes de Transporte são Avião, Caminhão e Trem. Enquanto a classe AirMail usa apenas objetos Plane, GroundMail pode funcionar com objetos Truck e Train. 
+Você pode criar uma nova subclasse (digamos, TrainMail) para lidar com ambos os casos, mas há outra opção. O código do cliente pode passar um argumento 
+para o método de fábrica da classe GroundMail para controlar qual produto deseja receber.
+
+- Se, após todas as extrações, o método de fábrica base ficar vazio, você poderá torná-lo abstrato. 
+Se sobrar algo, você pode torná-lo um comportamento padrão do método.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Factory Method e se concentra nas seguintes questões:
+Em que classes é composto?
+Que funções essas classes desempenham?
+De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A classe Creator declara o método de fábrica que deve retornar um objeto de uma classe Produto. As subclasses do Criador geralmente fornecem a
+// implementação deste método.
+
+abstract class Creator {
+
+// Observe que o Criador também pode fornecer alguma implementação padrão do método de fábrica.
+
+    public abstract factoryMethod(): Product;
+
+/* Observe também que, apesar do nome, a responsabilidade primária do Criador é não criar produtos. Normalmente, ele contém alguma lógica de negócios 
+central que depende de objetos Product, retornados pelo método de fábrica. As subclasses podem alterar indiretamente essa lógica de negócios substituindo 
+o método de fábrica e retornando um tipo de produto diferente dele.   */
+
+    public someOperation(): string {
+        // Chame o método de fábrica para criar um objeto Product.
+        const product = this.factoryMethod();
+        // Agora, use o produto.
+        return `Criador: o código do mesmo criador acabou de funcionar com ${product.operation()}`;
+    }
+}
+
+// Os Concrete Creators substituem o método de fábrica para alterar o tipo de produto resultante.
+class ConcreteCreator1 extends Creator {
+/* Observe que a assinatura do método ainda usa o produto abstrato tipo, mesmo que o produto concreto seja realmente devolvido do método. 
+Desta forma, o Criador pode ficar independente do produto concreto Aulas.           */
+    public factoryMethod(): Product {
+        return new ConcreteProduct1();
+    }
+}
+class ConcreteCreator2 extends Creator {
+    public factoryMethod(): Product {
+        return new ConcreteProduct2();
+    }
+}
+
+// A interface Produto declara as operações que todos os produtos concretos devem implementar.
+interface Product {
+    operation(): string;
+}
+
+// Concrete Products provide various implementations of the Product interface.
+class ConcreteProduct1 implements Product {
+    public operation(): string {
+        return '{Result of the ConcreteProduct1}';
+    }
+}
+class ConcreteProduct2 implements Product {
+    public operation(): string {
+        return '{Result of the ConcreteProduct2}';
+    }
+}
+
+/* O código do cliente funciona com uma instância de um criador concreto, embora por meio de sua interface básica. Enquanto o cliente continuar 
+trabalhando com o Creator por meio da interface base, você pode passar a subclasse de qualquer criador.    */
+
+function clientCode(creator: Creator) {
+    // ...
+    console.log('Cliente: Não conheço a classe do criador, mas ainda funciona.');
+    console.log(creator.someOperation());
+    // ...
+}
+
+// O aplicativo escolhe o tipo de criador dependendo da configuração ou ambiente.
+
+console.log('App: Lançado com o ConcreteCreator1.');
+clientCode(new ConcreteCreator1());
+console.log('');
+console.log('App: Lançado com o ConcreteCreator2.');
+clientCode(new ConcreteCreator2());
+
+-> Output.txt 
+App: Lançado com o ConcreteCreator1.
+Cliente: Não conheço a classe do criador, mas ainda funciona.
+Criador: o código do mesmo criador acabou de funcionar com {Result of the ConcreteProduct1}
+
+App: Lançado com o ConcreteCreator2.
+Cliente: Não conheço a classe do criador, mas ainda funciona.
+Criador: o código do mesmo criador acabou de funcionar com {Result of the ConcreteProduct2}
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o Factory Method quando não souber de antemão os tipos exatos e as dependências dos objetos com os quais seu código deve trabalhar. 
+O Factory Method separa o código de construção do produto do código que realmente usa o produto. Portanto, é mais fácil estender o código de construção 
+do produto independentemente do restante do código. Por exemplo, para adicionar um novo tipo de produto ao aplicativo, basta criar uma nova subclasse de 
+criador e sobrescrever o método de fábrica nela.
+
+- Use o Factory Method quando quiser fornecer aos usuários de sua biblioteca ou estrutura uma maneira de estender seus componentes internos.
+A herança é provavelmente a maneira mais fácil de estender o comportamento padrão de uma biblioteca ou estrutura. Mas como a estrutura reconheceria que 
+sua subclasse deveria ser usada em vez de um componente padrão? A solução é reduzir o código que constrói componentes em toda a estrutura em um único 
+método de fábrica e permitir que qualquer pessoa substitua esse método, além de estender o próprio componente.
+Vamos ver como isso funcionaria. Imagine que você escreve um aplicativo usando uma estrutura de interface do usuário de software livre. Seu aplicativo 
+deve ter botões redondos, mas a estrutura fornece apenas botões quadrados. Você estende a classe Button padrão com uma gloriosa subclasse RoundButton. 
+Mas agora você precisa dizer à classe UIFramework principal para usar a nova subclasse de botão em vez de uma padrão. Para conseguir isso, você cria uma 
+subclasse UIWithRoundButtons de uma classe de estrutura base e substitui seu método createButton. Embora esse método retorne objetos Button na classe 
+base, você faz sua subclasse retornar objetos RoundButton. Agora use a classe UIWithRoundButtons em vez de UIFramework. E é sobre isso!
+
+- Use o Método de Fábrica quando quiser economizar recursos do sistema reutilizando objetos existentes em vez de reconstruí-los a cada vez.
+Muitas vezes, você sente essa necessidade ao lidar com objetos grandes e com uso intensivo de recursos, como conexões de banco de dados, sistemas de 
+arquivos e recursos de rede. Vamos pensar no que deve ser feito para reutilizar um objeto existente:
+1. Primeiro, você precisa criar algum armazenamento para acompanhar todos os objetos criados.
+2. Quando alguém solicita um objeto, o programa deve procurar um objeto livre dentro desse pool.
+3. …e, em seguida, retorne-o ao código do cliente.
+4. Se não houver objetos livres, o programa deve criar um novo (e adicioná-lo ao pool).
+
+É muito código! E tudo deve ser colocado em um único lugar para que você não polua o programa com código duplicado.
+Provavelmente, o lugar mais óbvio e conveniente onde esse código pode ser colocado é o construtor da classe cujos objetos estamos tentando reutilizar. 
+No entanto, um construtor deve sempre retornar novos objetos por definição. Ele não pode retornar instâncias existentes. Portanto, você precisa ter um 
+método regular capaz de criar novos objetos, bem como reutilizar os existentes. Isso soa muito como um método de fábrica.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você evita um acoplamento estreito entre o criador e os produtos concretos.
+- Princípio da Responsabilidade Única. Você pode mover o código de criação do produto para um local no programa, facilitando o suporte ao código.
+- Princípio Aberto/Fechado. Você pode introduzir novos tipos de produtos no programa sem quebrar o código do cliente existente.
+
+--> Contras
+- O código pode se tornar mais complicado, pois você precisa introduzir muitas novas subclasses para implementar o padrão. O melhor cenário é quando 
+você está introduzindo o padrão em uma hierarquia existente de classes criadoras.

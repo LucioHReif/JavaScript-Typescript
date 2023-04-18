@@ -1,0 +1,170 @@
+** COMMAND **
+Command é um padrão de projeto que tem a intenção de encapsular um comando diretamente em um objeto. Na verdade é um padrão bem simples, por ser a 
+versão orientada a objetos para funções de callback, ou seja, se você conhece funções de callback, conhece o padrão command.
+
+Por exemplo, se você tem um botão na sua aplicação e deseja que esse botão mande solicitações (comandos) para outro objeto (digamos um widget na tela), 
+ao invés de encaminhar a chamada diretamente para o widget, criaríamos um objeto específico relacionado com este comando.
+Suponha que a classe DisplayMessageCommand, fosse o nosso comando. Essa classe precisa ter um campo para fazer referência ao receiver (o widget). 
+Nesse caso, nosso botão encaminha uma solicitação ao DisplayMessageCommand, que conhece a classe do widget, que sabe como executar o comando. Mais ou menos assim:
+
+Button (invoker) -> DisplayMessageCommand (command) -> Widget (receiver)
+Perceba que invoker é quem solicita a ação, no nosso caso o botão, command é o nosso comando e receiver é o objeto que sabe executar a ação (nosso widget). 
+O command funciona como uma função de callback, porém aqui estamos falando de programação orientada a objetos, então ele é uma classe normal (um objeto).
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Declare a interface de comando com um único método de execução.
+
+- Comece a extrair solicitações em classes de comando concretas que implementam a interface de comando. 
+Cada classe deve ter um conjunto de campos para  armazenar os argumentos da solicitação junto com uma referência ao objeto receptor real. 
+Todos esses valores devem ser inicializados por meio do construtor do comando.
+
+- Identifique as classes que atuarão como remetentes. Adicione os campos para armazenar comandos nessas classes. 
+Os remetentes devem se comunicar com seus comandos apenas por meio da interface de comando. Os remetentes geralmente não criam objetos de comando por conta 
+própria, mas os obtêm do código do cliente.
+
+- Altere os remetentes para que eles executem o comando em vez de enviar uma solicitação diretamente ao destinatário.
+
+- O cliente deve inicializar os objetos na seguinte ordem:
+Crie receptores.
+Crie comandos e associe-os a receptores, se necessário.
+Crie remetentes e associe-os a comandos específicos.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Command e se concentra nas seguintes questões:
+- Em que classes consiste?
+- Que papéis desempenham essas classes?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface Command declara um método para executar um comando.
+
+interface Command {
+    execute(): void;
+}
+
+// Alguns comandos podem implementar operações simples por conta própria.
+
+class SimpleCommand implements Command {
+    private payload: string;
+    constructor(payload: string) {
+        this.payload = payload;
+    }
+    public execute(): void {
+        console.log(`SimpleCommand: See, I can do simple things like printing (${this.payload})`);
+    }
+}
+
+// No entanto, alguns comandos podem delegar operações mais complexas a outros objetos, chamados de "receptores".
+
+class ComplexCommand implements Command {
+    private receiver: Receiver;
+    // Context data, required for launching the receiver's methods.
+    private a: string;
+    private b: string;
+
+// Comandos complexos podem aceitar um ou vários objetos receptores junto com quaisquer dados de contexto por meio do construtor.
+
+    constructor(receiver: Receiver, a: string, b: string) {
+        this.receiver = receiver;
+        this.a = a;
+        this.b = b;
+    }
+    // Os comandos podem delegar a qualquer método de um receptor.
+    public execute(): void {
+        console.log('ComplexCommand: Complex stuff should be done by a receiver object.');
+        this.receiver.doSomething(this.a);
+        this.receiver.doSomethingElse(this.b);
+    }
+}
+
+// As classes Receiver contêm algumas lógicas de negócios importantes (realizar todos os tipos de operações, associadas à realização de um pedido).
+// Em fato, qualquer classe pode servir como um receptor.
+
+class Receiver {
+    public doSomething(a: string): void {
+        console.log(`Receiver: Working on (${a}.)`);
+    }
+    public doSomethingElse(b: string): void {
+        console.log(`Receiver: Also working on (${b}.)`);
+    }
+}
+
+// O Invoker está associado a um ou vários comandos. Ele envia uma solicitação ao comando.
+
+class Invoker {
+    private onStart: Command;
+    private onFinish: Command;
+    // Inicializa os comandos
+    public setOnStart(command: Command): void {
+        this.onStart = command;
+    }
+    public setOnFinish(command: Command): void {
+        this.onFinish = command;
+    }
+
+// O Invoker não depende de comandos concretos ou classes receptoras. 
+// O Invoker passa uma solicitação para um receptor indiretamente, executando um comando.
+
+    public doSomethingImportant(): void {
+        console.log('Invoker: Does anybody want something done before I begin?');
+        if (this.isCommand(this.onStart)) {
+            this.onStart.execute();
+        }
+        console.log('Invoker: ...doing something really important...');
+        console.log('Invoker: Does anybody want something done after I finish?');
+        if (this.isCommand(this.onFinish)) {
+            this.onFinish.execute();
+        }
+    }
+    private isCommand(object): object is Command {
+        return object.execute !== undefined;
+    }
+}
+
+// O código do cliente pode parametrizar um invocador com qualquer comando.
+
+const invoker = new Invoker();
+invoker.setOnStart(new SimpleCommand('Say Hi!'));
+const receiver = new Receiver();
+invoker.setOnFinish(new ComplexCommand(receiver, 'Send email', 'Save report'));
+invoker.doSomethingImportant();
+
+-> Output.txt
+Invoker: Does anybody want something done before I begin?
+SimpleCommand: See, I can do simple things like printing (Say Hi!)
+Invoker: ...doing something really important...
+Invoker: Does anybody want something done after I finish?
+ComplexCommand: Complex stuff should be done by a receiver object.
+Receiver: Working on (Send email.)
+Receiver: Also working on (Save report.)
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Command quando quiser parametrizar objetos com operações. O padrão Command pode transformar uma chamada de método específica em um objeto 
+autônomo. Essa alteração abre muitos usos interessantes: você pode passar comandos como argumentos de método, armazená-los dentro de outros objetos, alternar 
+comandos vinculados em tempo de execução, etc.
+Aqui está um exemplo: você está desenvolvendo um componente GUI como um menu de contexto e deseja que seus usuários possam configurar itens de menu que 
+acionam operações quando um usuário final clica em um item.
+
+- Use o padrão Command quando quiser enfileirar operações, agendar sua execução ou executá-las remotamente.
+Assim como qualquer outro objeto, um comando pode ser serializado, o que significa convertê-lo em uma string que pode ser facilmente gravada em um arquivo 
+ou banco de dados. Posteriormente, a string pode ser restaurada como o objeto de comando inicial. Assim, você pode atrasar e agendar a execução do comando. 
+Mas ainda há mais! Da mesma forma, você pode enfileirar, registrar ou enviar comandos pela rede.
+
+- Use o padrão Command quando quiser implementar operações reversíveis. Embora existam muitas maneiras de implementar desfazer/refazer, o padrão Command é 
+talvez o mais popular de todos. Para poder reverter as operações, você precisa implementar o histórico das operações realizadas. O histórico de comandos é 
+uma pilha que contém todos os objetos de comandos executados junto com backups relacionados do estado do aplicativo.Este método tem duas desvantagens: 
+
+Primeiro, não é tão fácil salvar o estado de um aplicativo porque alguns deles podem ser privados. Esse problema pode ser mitigado com o padrão Memento.
+
+Em segundo lugar, os backups de estado podem consumir bastante RAM. Portanto, às vezes você pode recorrer a uma implementação alternativa: em vez de 
+restaurar o estado anterior, o comando executa a operação inversa. A operação inversa pode revelar-se difícil ou mesmo impossível de implementar.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Princípio da Responsabilidade Única. Você pode desacoplar classes que invocam operações de classes que executam essas operações.
+- Princípio Aberto/Fechado. Você pode introduzir novos comandos no aplicativo sem quebrar o código do cliente existente.
+- Você pode implementar desfazer/refazer.
+- Você pode implementar a execução adiada de operações.
+- Você pode montar um conjunto de comandos simples em um complexo.
+
+--> Contras
+- O código pode se tornar mais complicado, pois você está introduzindo uma nova camada entre remetentes e destinatários.

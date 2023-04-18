@@ -1,0 +1,22 @@
+O Express é uma estrutura web de roteamento e middlewares que tem uma funcionalidade mínima por si só: 
+Um aplicativo do Express é essencialmente uma série de chamadas de funções de middleware.
+
+Funções de Middleware são funções que tem acesso ao objeto de solicitação (req), o objeto de resposta (res), 
+e a próxima função de middleware no ciclo solicitação-resposta do aplicativo. 
+A próxima função middleware é comumente denotada por uma variável chamada next.
+Funções de middleware podem executar as seguintes tarefas:
+
+Executar qualquer código.
+Fazer mudanças nos objetos de solicitação e resposta.
+Encerrar o ciclo de solicitação-resposta.
+Chamar a próxima função de middleware na pilha.
+
+Se a atual função de middleware não terminar o ciclo de solicitação-resposta, ela precisa chamar next() para 
+passar o controle para a próxima função de middleware. Caso contrário, a solicitação ficará suspensa.
+
+Um aplicativo Express pode usar os seguintes tipos de middleware:
+Middleware de nível do aplicativo
+Middleware de nível de roteador
+Middleware de manipulação de erros
+Middleware integrado
+Middleware de Terceiros

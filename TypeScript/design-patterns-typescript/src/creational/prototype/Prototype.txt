@@ -1,0 +1,126 @@
+
+** PROTOTYPE **
+Refere-se à criação de objetos duplicados, mantendo o desempenho em mente. Esse tipo de padrão de design se enquadra no padrão criacional, pois 
+esse padrão fornece uma das melhores maneiras de criar um objeto. Esse padrão envolve a implementação de uma interface de protótipo que diz para 
+criar um clone do objeto atual. Este padrão é usado quando a criação direta do objeto é cara. Por exemplo, um objeto deve ser criado após uma 
+operação de banco de dados dispendiosa. Podemos armazenar em cache o objeto, retornar seu clone na próxima solicitação e atualizar o banco de 
+dados quando necessário, reduzindo assim as chamadas de banco de dados.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Crie a interface do protótipo e declare o método clone nela. Ou apenas adicione o método a todas as classes de uma hierarquia de classes existente, 
+se você tiver uma.
+
+- Uma classe de protótipo deve definir o construtor alternativo que aceita um objeto dessa classe como um argumento. O construtor deve copiar os valores 
+de todos os campos definidos na classe do objeto passado para a instância recém-criada. Se você estiver alterando uma subclasse, deverá chamar o construtor 
+pai para permitir que a superclasse manipule a clonagem de seus campos privados.
+Se sua linguagem de programação não suportar sobrecarga de método, você não poderá criar um construtor de “protótipo” separado. Assim, a cópia dos dados 
+do objeto para o clone recém-criado deverá ser realizada dentro do método clone. Ainda assim, ter esse código em um construtor regular é mais seguro porque
+ o objeto resultante é retornado totalmente configurado logo após a chamada do novo operador.
+
+- O método de clonagem geralmente consiste em apenas uma linha: executar um novo operador com a versão prototípica do construtor. Observe que cada classe 
+deve substituir explicitamente o método de clonagem e usar seu próprio nome de classe junto com o novo operador. Caso contrário, o método de clonagem pode 
+produzir um objeto de uma classe pai.
+
+- Opcionalmente, crie um registro de protótipo centralizado para armazenar um catálogo de protótipos usados ​​com frequência.
+Você pode implementar o registro como uma nova classe de fábrica ou colocá-lo na classe de protótipo base com um método estático para buscar o protótipo. 
+Este método deve procurar um protótipo com base nos critérios de pesquisa que o código do cliente passa para o método. Os critérios podem ser uma tag de 
+string simples ou um conjunto complexo de parâmetros de pesquisa. Depois que o protótipo apropriado for encontrado, o registro deve cloná-lo e devolver 
+a cópia ao cliente.
+Por fim, substitua as chamadas diretas aos construtores das subclasses por chamadas ao método de fábrica do registro do protótipo.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Prototype e se concentra nas seguintes questões:
+Em que classes é composto?
+Que funções essas classes desempenham?
+De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A classe de exemplo que tem capacidade de clonagem. Veremos como serão clonados os valores de campos com tipos diferentes.
+
+class Prototype {
+    public primitive: any;
+    public component: object;
+    public circularReference: ComponentWithBackReference;
+    public clone(): this {
+        const clone = Object.create(this);
+        clone.component = Object.create(this.component);
+
+/* Clonando um objeto que tem um objeto aninhado com referência inversa requer tratamento especial. Após a conclusão da clonagem, o objeto aninhado deve 
+apontar para o objeto clonado, ao invés do objeto original. O operador Spread pode ser útil neste caso.
+
+        clone.circularReference = {
+            ...this.circularReference,
+            prototype: { ...this },
+        };
+        return clone;
+    }
+}
+
+class ComponentWithBackReference {
+    public prototype;
+    constructor(prototype: Prototype) {
+        this.prototype = prototype;
+    }
+}
+
+// Código do Cliente
+function clientCode() {
+    const p1 = new Prototype();
+    p1.primitive = 245;
+    p1.component = new Date();
+    p1.circularReference = new ComponentWithBackReference(p1);
+
+    const p2 = p1.clone();
+    if (p1.primitive === p2.primitive) {
+        console.log('Os valores de campo primitivos foram transferidos para um clone. Yay!');
+    } else {
+        console.log('Os valores de campo primitivos não foram copiados. Booo!');
+    }
+    if (p1.component === p2.component) {
+        console.log('O componente simples não foi clonado. Booo!');
+    } else {
+        console.log('O componente simples foi clonado. Yay!');
+    }
+
+    if (p1.circularReference === p2.circularReference) {
+        console.log('O componente com referência anterior não foi clonado. Booo!');
+    } else {
+        console.log('O componente com referência anterior foi clonado. Yay!');
+    }
+
+    if (p1.circularReference.prototype === p2.circularReference.prototype) {
+        console.log('O componente com referência anterior está vinculado ao objeto original. Booo!');
+    } else {
+        console.log('O componente com referência anterior está vinculado ao clone. Yay!');
+    }
+}
+clientCode();
+
+-> Output.txt
+Os valores de campo primitivos foram transferidos para um clone. Yay!
+O componente simples foi clonado. Yay!
+O componente com referência anterior foi clonado. Yay!
+O componente com referência anterior está vinculado ao clone. Yay!
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Prototype quando seu código não deve depender das classes concretas de objetos que você precisa copiar.
+Isso acontece muito quando seu código trabalha com objetos passados ​​para você de um código de terceiros por meio de alguma interface. 
+As classes concretas desses objetos são desconhecidas e você não poderia depender delas mesmo que quisesse.
+O padrão Prototype fornece ao código do cliente uma interface geral para trabalhar com todos os objetos que suportam clonagem. Essa interface torna o código 
+do cliente independente das classes concretas de objetos que ele clona.
+
+- Use o padrão quando quiser reduzir o número de subclasses que diferem apenas na forma como inicializam seus respectivos objetos.
+Suponha que você tenha uma classe complexa que requer uma configuração trabalhosa antes de poder ser usada. Existem várias maneiras comuns de configurar essa 
+classe e esse código está espalhado pelo seu aplicativo. Para reduzir a duplicação, você cria várias subclasses e coloca cada código de configuração comum em 
+seus construtores. Você resolveu o problema de duplicação, mas agora tem muitas subclasses fictícias.
+O padrão Prototype permite usar um conjunto de objetos pré-construídos configurados de várias maneiras como protótipos. Em vez de instanciar uma subclasse que 
+corresponda a alguma configuração, o cliente pode simplesmente procurar um protótipo apropriado e cloná-lo.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós
+- Você pode clonar objetos sem acoplar a suas classes concretas.
+- Você pode se livrar do código de inicialização repetido em favor da clonagem de protótipos pré-construídos.
+- Você pode produzir objetos complexos de forma mais conveniente.
+- Você obtém uma alternativa à herança ao lidar com predefinições de configuração para objetos complexos.
+
+-> Contras
+- A clonagem de objetos complexos que possuem referências circulares pode ser muito complicada.

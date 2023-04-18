@@ -1,0 +1,195 @@
+** STRATEGY **
+O Strategy é um padrão de projeto que visa separar o conceito de algoritmo da regra de negócio para permitir que vários algoritmos possam ser implementados 
+sem a necessidade de alterar a regra de negócio ou outros algoritmos que já existam no sistema.
+
+-> Problema
+Imagine que você tem um e-commerce que implementa promoções esporadicamente para aumentar as vendas. As promoções podem variar de acordo com a época, com o 
+preço total do carrinho de compras ou até com a quantidade de produtos adquiridos pelo cliente. Por exemplo: compre 3 produtos e ganhe 10% de desconto; 
+compre R$150 e ganhe 15% de desconto; compre 5 produtos da categoria X e ganhe outro.
+Essa promoções podem gerar muitas condicionais dentro da regra de negócio do carrinho de compras ao obter o preço com desconto. Como, por exemplo:
+
+// - Carrinho precisa ter no mínimo 3 produtos
+// - De acordo com o valor total o desconto pode aumentar
+if (cart.quantity >= 3) {
+  if (cart.total >= 100 && cart.total < 200) {
+    cart.discount = 10; // 10%
+  } else if (cart.total >= 200 && cart.total < 300) {
+    cart.discount = 20; // 20%
+  } else if (cart.total >= 300) {
+    cart.discount = 30; // 30%
+  }
+}
+
+Não há problemas nessa lógica enquanto houver apenas essa promoção. Porém, a partir do momento que a promoção muda ou que implementemos outras promoções que 
+são aplicadas ao mesmo tempo, devemos alterar a classe do carrinho de compras. Isso quebra o princípio do Aberto/Fechado e o princípio da responsabilidade única. 
+E tem mais, se quiséssemos guardar a promoção antiga para retorná-la posteriormente, eu penso que alguns programadores poderiam pensar em fazer algo assim:
+
+// SOLUÇÃO INGÊNUA (NUNCA FAÇA ISSO)
+// Vamos precisar dessa promoção posteriormente
+// Então vamos comentar o código antigo
+//
+// Promoção antiga
+// if (cart.quantity > 3) {
+//   if (cart.total >= 100 && cart.total < 200) {
+//     cart.discount = 10; // 10%
+//   } else if (cart.total >= 200 && cart.total < 300) {
+//     cart.discount = 20; // 20%
+//   } else if (cart.total >= 300) {
+//     cart.discount = 30; // 30%
+//   }
+// }
+
+// Nova promoção
+if (cart.total >= 150) {
+  cart.discount = 5; // 5%
+}
+Além de não ser uma solução, continuamos quebrando o princípio da responsabilidade única e o princípio do aberto/fechado. Não bastasse isso, também estamos 
+quebrando todos os testes que já foram criados anteriormente para a classe do carrinho de compras.
+
+-> Solução - Strategy
+O Strategy diz que devemos separar os algoritmos da classe do carrinho de compras. Nesse caso, podemos gerar uma família de algoritmos que implementam a mesma 
+interface e podem aplicar descontos diferentes da maneira que precisarmos. Poderíamos, por exemplo, ter uma interface DiscountStrategy com o método getDiscount 
+para garantir que todas as classes de desconto tenham o método getDiscount.
+Agora podemos fazer com que o carrinho de compras tenha um campo para receber uma classe do tipo DiscountStrategy. Ao chamar o método para obter o valor total 
+no carrinho de compras, ele não precisa fazer nenhuma lógica adicional, basta chamar a sua estratégia de desconto. Por exemplo:
+
+export class ShoppingCart {
+  private discount: DiscountStrategy = new DefaultDiscount();
+  // ... Código omitido
+  getTotal(): number {
+    return this.discount.getDiscount(this);
+  }
+  // ... Código omitido
+}
+Perceba que a classe do carrinho de compras não precisa fazer nenhuma lógica complexa sobre qual desconto aplicar, ela simplesmente delega a tarefa de aplicar 
+desconto para outra classe que terá apenas um responsabilidade, aplicar um desconto.
+Melhor do que isso, agora você pode mudar de promoção quando quiser simplesmente configurando o campo discount, por exemplo:
+
+export class ShoppingCart {
+  private discount: DiscountStrategy = new DefaultDiscount();
+  // ... Código omitido
+  getTotal(): number {
+    return this.discount.getDiscount(this);
+  }
+  setDiscount(discount: DiscountStrategy): void {
+    // Configura um outro desconto qualquer
+    this.discount = discount;
+  }
+  // ... Código omitido
+}
+Para trocar de promoção de desconto, apenas crie uma nova classe com o algoritmo do novo desconto e configure o carrinho usando setDiscount.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Na classe de contexto, identifique um algoritmo propenso a mudanças frequentes. Também pode ser uma condicional massiva que seleciona e executa uma variante 
+do mesmo algoritmo em tempo de execução.
+
+- Declare a interface de estratégia comum a todas as variantes do algoritmo.
+
+- Um por um, extraia todos os algoritmos em suas próprias classes. Todos eles devem implementar a interface de estratégia.
+
+- Na classe de contexto, adicione um campo para armazenar uma referência a um objeto de estratégia. 
+Forneça um configurador para substituir os valores desse campo. O contexto deve funcionar com o objeto de estratégia somente por meio da interface de estratégia. 
+O contexto pode definir uma interface que permite que a estratégia acesse seus dados.
+
+- Os clientes do contexto devem associá-lo a uma estratégia adequada que corresponda à maneira como eles esperam que o contexto desempenhe seu trabalho principal.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto State e se concentra nas seguintes questões:
+- Em que classes é composto?
+- Que funções essas classes desempenham?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// O Contexto define a interface de interesse dos clientes.
+class Context {
+/* @type {Strategy} O Context mantém uma referência a um dos objetos Strategy.
+O Contexto não conhece a classe concreta de uma estratégia. Ele deve funcionar com todas as estratégias por meio da interface Strategy.      */
+   
+    private strategy: Strategy;
+    // Normalmente, o Context aceita uma estratégia por meio do construtor, mas também fornece um setter para alterá-la em tempo de execução.
+    constructor(strategy: Strategy) {
+        this.strategy = strategy;
+    }
+    // Normalmente, o Context permite substituir um objeto Strategy em tempo de execução.
+    public setStrategy(strategy: Strategy) {
+        this.strategy = strategy;
+    }
+
+// O Context delega algum trabalho ao objeto Strategy em vez de implementar várias versões do algoritmo por conta própria.
+    public doSomeBusinessLogic(): void {
+        // ...
+        console.log('Context: Sorting data using the strategy (not sure how it\'ll do it)');
+        const result = this.strategy.doAlgorithm(['a', 'b', 'c', 'd', 'e']);
+        console.log(result.join(','));
+        // ...
+    }
+}
+
+// A interface Strategy declara operações comuns a todas as versões suportadas de algum algoritmo.
+// O Context usa esta interface para chamar o algoritmo definido por Concrete Strategies.
+
+interface Strategy {
+    doAlgorithm(data: string[]): string[];
+}
+
+// Concrete Strategies implementa o algoritmo enquanto segue a interface base da Strategy. A interface os torna intercambiáveis ​​no Contexto.
+
+class ConcreteStrategyA implements Strategy {
+    public doAlgorithm(data: string[]): string[] {
+        return data.sort();
+    }
+}
+class ConcreteStrategyB implements Strategy {
+    public doAlgorithm(data: string[]): string[] {
+        return data.reverse();
+    }
+}
+
+// O código do cliente escolhe uma estratégia concreta e a passa para o contexto. 
+// O cliente deve estar ciente das diferenças entre as estratégias para fazer a escolha certa.
+
+const context = new Context(new ConcreteStrategyA());
+console.log('Client: Strategy is set to normal sorting.');
+context.doSomeBusinessLogic();
+console.log('');
+console.log('Client: Strategy is set to reverse sorting.');
+context.setStrategy(new ConcreteStrategyB());
+context.doSomeBusinessLogic();
+
+-> Output.txt
+Client: Strategy is set to normal sorting.
+Context: Sorting data using the strategy (not sure how it'll do it)
+a,b,c,d,e
+
+Client: Strategy is set to reverse sorting.
+Context: Sorting data using the strategy (not sure how it'll do it)
+e,d,c,b,a
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Strategy quando quiser usar diferentes variantes de um algoritmo dentro de um objeto e poder alternar de um algoritmo para outro durante o tempo 
+de execução. O padrão Strategy permite alterar indiretamente o comportamento do objeto em tempo de execução, associando-o a diferentes subobjetos que podem 
+executar subtarefas específicas de maneiras diferentes.
+
+- Use a estratégia quando você tiver muitas classes semelhantes que diferem apenas na maneira como executam algum comportamento. O padrão Strategy permite 
+extrair o comportamento variável em uma hierarquia de classe separada e combinar as classes originais em uma, reduzindo assim o código duplicado.
+
+- Use o padrão para isolar a lógica de negócios de uma classe dos detalhes de implementação de algoritmos que podem não ser tão importantes no contexto dessa 
+lógica. O padrão Strategy permite isolar o código, os dados internos e as dependências de vários algoritmos do restante do código. 
+Vários clientes obtêm uma interface simples para executar os algoritmos e trocá-los em tempo de execução.
+
+- Use o padrão quando sua classe tiver uma instrução condicional massiva que alterna entre diferentes variantes do mesmo algoritmo.
+O padrão Strategy permite eliminar essa condicional extraindo todos os algoritmos em classes separadas, todas implementando a mesma interface. 
+O objeto original delega a execução a um desses objetos, em vez de implementar todas as variantes do algoritmo.
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós
+- Você pode trocar algoritmos usados ​​dentro de um objeto em tempo de execução.
+- Você pode isolar os detalhes de implementação de um algoritmo do código que o utiliza.
+- Você pode substituir herança por composição.
+- Princípio Aberto/Fechado. Você pode introduzir novas estratégias sem precisar mudar o contexto.
+
+--> Contras
+- Se você tem apenas alguns algoritmos e eles raramente mudam, não busque complicar demais o programa com novas classes e interfaces que acompanham o padrão.
+- Os clientes devem estar cientes das diferenças entre as estratégias para poder selecionar uma adequada.
+- Muitas linguagens de programação modernas têm suporte de tipo funcional que permite implementar diferentes versões de um algoritmo dentro de um conjunto de 
+funções anônimas. 
+Em seguida, você poderia usar essas funções exatamente como usaria os objetos de estratégia, mas sem sobrecarregar seu código com classes e interfaces extras.

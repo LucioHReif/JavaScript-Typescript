@@ -1,0 +1,259 @@
+Entendendo o Factory Pattern
+Antes de entrar na explicação da fábrica abstrata, quero que você saiba o que significa padrão de fábrica.
+
+Simple factory pattern
+Para simplificar, deixe-me fazer uma analogia. Digamos que você esteja com fome e queira comer alguma coisa. Você pode cozinhar para si mesmo ou pedir em 
+um restaurante. Dessa forma, você não precisa aprender ou saber cozinhar para comer algum alimento. Da mesma forma, o padrão de fábrica simplesmente gera 
+uma instância de objeto para um usuário sem expor nenhuma lógica de instanciação ao cliente. 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+** ABSTRACT FACTORY PATTERN **
+Estendendo nosso exemplo simples de fábrica, digamos que você está com fome e decidiu pedir comida em um restaurante. Com base na sua preferência, você pode 
+pedir uma cozinha diferente. Então, talvez seja necessário selecionar o melhor restaurante com base na culinária. Como você pode ver, existe uma dependência 
+entre sua comida e o restaurante. Diferentes restaurantes são melhores para diferentes cozinhas.
+Vamos implementar um padrão de fábrica abstrato dentro de nosso aplicativo Node.js. Agora, vamos construir uma loja de laptops com diferentes tipos de 
+computadores. Alguns dos principais componentes são Storage e Processor. Vamos construir uma interface para ele:
+
+export default interface IStorage {
+     getStorageType(): string
+}
+import IStorage from './IStorage'
+export default interface IProcessor {
+    attachStorage(storage : IStorage) : string
+
+    showSpecs() : string
+}
+
+A seguir, vamos implementar as interfaces de armazenamento e processador em classes:
+
+import IProcessor from '../../Interface/IProcessor'
+import IStorage from '../../Interface/IStorage'
+export default class MacbookProcessor implements IProcessor {
+    storage: string | undefined
+    MacbookProcessor() {
+        console.log("Macbook is built using apple silicon chips")    
+    }
+    attachStorage(storageAttached: IStorage) {
+        this.storage = storageAttached.getStorageType()
+        console.log("storageAttached",storageAttached.getStorageType())
+        return this.storage+" Attached to Macbook"
+    }
+    showSpecs(): string {
+        return this.toString()
+    }
+    toString() : string {
+        return "AppleProcessor is created using Apple Silicon and "+this.storage;
+    }
+}
+
+import IProcessor from '../../Interface/IProcessor'
+import IStorage from '../../Interface/IStorage'
+export default class MacbookStorage implements IStorage {
+    storageSize: number
+    constructor(storageSize : number) {
+        this.storageSize = storageSize
+        console.log(this.storageSize+" GB SSD is used")
+    }
+    getStorageType() {
+        return  this.storageSize+"GB SSD"
+    }
+}
+
+Agora, criaremos uma interface de fábrica, que possui métodos como createProcessor e createStorage.
+
+import IStorage from '../Interface/IStorage'
+import IProcessor from '../Interface/IProcessor'
+export default interface LaptopFactory {
+    createProcessor() : IProcessor
+
+    createStorage() : IStorage
+}
+
+Uma vez criada a interface de fábrica, implemente-a na classe Laptop. Aqui, será:
+
+import LaptopFactory from '../../factory/LaptopFactory'
+import MacbookProcessor from './MacbookProcessor'
+import MacbookStorage from './MacbookStorage'
+export class Macbook implements LaptopFactory {
+    storageSize: number;
+    constructor(storage : number) {
+        this.storageSize = storage
+    }
+    createProcessor() : any{
+        return new MacbookProcessor()
+    }
+    createStorage(): any {
+        return new MacbookStorage(this.storageSize)
+    }
+}
+
+Por fim, crie uma função que chame os métodos de fábrica:
+
+import LaptopFactory from '../factory/LaptopFactory'
+import IProcessor from '../Interface/IProcessor'
+export const buildLaptop =  (laptopFactory : LaptopFactory) : IProcessor => {
+    const processor = laptopFactory.createProcessor()
+
+    const storage = laptopFactory.createStorage()
+
+    processor.attachStorage(storage)
+
+    return processor
+}
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Mapeie uma matriz de tipos de produtos distintos versus variantes desses produtos.
+
+- Declare interfaces abstratas de produtos para todos os tipos de produtos. 
+Em seguida, faça com que todas as classes de produtos concretas implementem essas interfaces.
+
+- Declare a interface de fábrica abstrata com um conjunto de métodos de criação para todos os produtos abstratos.
+
+- Implemente um conjunto de classes de fábrica concretas, uma para cada variante de produto.
+
+- Crie um código de inicialização de fábrica em algum lugar do aplicativo. Ele deve instanciar uma das classes de fábrica concretas, dependendo da 
+configuração do aplicativo ou do ambiente atual. Passe este objeto de fábrica para todas as classes que constroem produtos.
+
+- Examine o código e encontre todas as chamadas diretas para os construtores de produtos. Substitua-os por chamadas para o método de criação apropriado no 
+objeto de fábrica.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Abstract Factory. Ele se concentra em responder a estas perguntas:
+- Em que classes é composto?
+- Que funções essas classes desempenham?
+- De que maneira os elementos do padrão estão relacionados?
+
+index.ts
+/* A interface Abstract Factory declara um conjunto de métodos que retornam diferentes produtos abstratos. Esses produtos são chamados de família e estão 
+relacionados por um tema ou conceito de alto nível. Os produtos de uma família geralmente são capazes de colaborar entre si. Uma família de produtos pode 
+ter diversas variantes, mas os produtos de uma variante são incompatíveis com os produtos de outra. */
+
+interface AbstractFactory {
+    createProductA(): AbstractProductA;
+    createProductB(): AbstractProductB;
+}
+
+/* As fábricas de concreto produzem uma família de produtos pertencentes a uma única variante. A fábrica garante que os produtos resultantes são compatíveis.
+Observe que as assinaturas dos métodos da Concrete Factory retornam um produto abstrato, enquanto dentro do método é instanciado um produto concreto. */
+
+class ConcreteFactory1 implements AbstractFactory {
+    public createProductA(): AbstractProductA {
+        return new ConcreteProductA1();
+    }
+    public createProductB(): AbstractProductB {
+        return new ConcreteProductB1();
+    }
+}
+
+// Cada fábrica de concreto tem uma variante de produto correspondente.
+
+class ConcreteFactory2 implements AbstractFactory {
+    public createProductA(): AbstractProductA {
+        return new ConcreteProductA2();
+    }
+    public createProductB(): AbstractProductB {
+        return new ConcreteProductB2();
+    }
+}
+
+// Cada produto distinto de uma família de produtos deve ter uma interface base. Todas as variantes do produto devem implementar esta interface.
+
+interface AbstractProductA {
+    usefulFunctionA(): string;
+}
+
+// Esses Produtos de Concreto são criados pelas Fábricas de Concreto correspondentes.
+
+class ConcreteProductA1 implements AbstractProductA {
+    public usefulFunctionA(): string {
+        return 'The result of the product A1.';
+    }
+}
+class ConcreteProductA2 implements AbstractProductA {
+    public usefulFunctionA(): string {
+        return 'The result of the product A2.';
+    }
+}
+
+// Aqui está a interface básica de outro produto. Todos os produtos podem interagir uns com os outros, mas a interação adequada só é possível entre
+// produtos da mesma variante de concreto. 
+
+interface AbstractProductB {
+    // O produto B é capaz de fazer suas próprias coisas...
+    usefulFunctionB(): string;
+//...mas também pode colaborar com o ProductA. A Abstract Factory garante que todos os produtos que ela cria sejam da mesma variante e, portanto, compatíveis.
+    anotherUsefulFunctionB(collaborator: AbstractProductA): string;
+}
+
+// Esses Produtos de Concreto são criados pelas Fábricas de Concreto correspondentes.
+
+class ConcreteProductB1 implements AbstractProductB {
+    public usefulFunctionB(): string {
+        return 'The result of the product B1.';
+    }
+
+// A variante, Produto B1, só pode funcionar corretamente com a variante, Produto A1. No entanto, ele aceita qualquer instância de AbstractProductA como argumento.
+
+    public anotherUsefulFunctionB(collaborator: AbstractProductA): string {
+        const result = collaborator.usefulFunctionA();
+        return `The result of the B1 collaborating with the (${result})`;
+    }
+}
+class ConcreteProductB2 implements AbstractProductB {
+    public usefulFunctionB(): string {
+        return 'The result of the product B2.';
+    }
+
+// A variante, Produto B2, só pode funcionar corretamente com a variante, Produto A2. No entanto, ele aceita qualquer instância de AbstractProductA como argumento.
+
+    public anotherUsefulFunctionB(collaborator: AbstractProductA): string {
+        const result = collaborator.usefulFunctionA();
+        return `The result of the B2 collaborating with the (${result})`;
+    }
+}
+
+// O código cliente trabalha com fábricas e produtos apenas por meio de tipos abstratos: AbstractFactory e AbstractProduct.
+// Isso permite que você passe qualquer fábrica ou subclasse de produto para o código do cliente sem quebrá-lo.
+
+function clientCode(factory: AbstractFactory) {
+    const productA = factory.createProductA();
+    const productB = factory.createProductB();
+
+    console.log(productB.usefulFunctionB());
+    console.log(productB.anotherUsefulFunctionB(productA));
+}
+
+// O código do cliente pode funcionar com qualquer classe de fábrica concreta.
+
+console.log('Cliente: Testando o código do cliente com o primeiro tipo de fábrica...');
+clientCode(new ConcreteFactory1());
+console.log('');
+console.log('Cliente: Testando o mesmo código de cliente com o segundo tipo de fábrica...');
+clientCode(new ConcreteFactory2());
+
+Output.txt
+Cliente: Testando o código do cliente com o primeiro tipo de fábrica...
+O resultado do produto B1.
+O resultado do B1 colaborando com o (O resultado do produto A1.)
+
+Cliente: Testando o mesmo código de cliente com o segundo tipo de fábrica...
+O resultado do produto B2.
+O resultado do B2 colaborando com o (O resultado do produto A2.)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+-> Aplicabilidade
+- Use o Abstract Factory quando seu código precisar trabalhar com várias famílias de produtos relacionados, mas você não quiser que ele dependa das classes 
+concretas desses produtos - eles podem ser desconhecidos de antemão ou você simplesmente deseja permitir extensibilidade futura. A Abstract Factory fornece 
+uma interface para criar objetos de cada classe da família de produtos. Desde que seu código crie objetos por meio dessa interface, você não precisa se 
+preocupar em criar a variante errada de um produto que não corresponda aos produtos já criados pelo seu aplicativo.
+
+- Considere implementar o Abstract Factory quando você tiver uma classe com um conjunto de Factory Methods que obscurece sua responsabilidade primária.
+Em um programa bem projetado, cada classe é responsável apenas por uma coisa. Quando uma classe lida com vários tipos de produtos, pode valer a pena extrair 
+seus métodos de fábrica em uma classe de fábrica autônoma ou em uma implementação de fábrica abstrata completa.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você pode ter certeza de que os produtos que você recebe de uma fábrica são compatíveis entre si.
+- Você evita o acoplamento rígido entre produtos concretos e código do cliente.
+- Princípio da Responsabilidade Única. Você pode extrair o código de criação do produto em um só lugar, facilitando o suporte ao código.
+- Princípio Aberto/Fechado. Você pode introduzir novas variantes de produtos sem quebrar o código do cliente existente.
+
+--> Contras
+- O código pode se tornar mais complicado do que deveria, já que muitas novas interfaces e classes são introduzidas

@@ -1,0 +1,164 @@
+** STATE **
+Permite que um objeto altere seu comportamento quando seu estado interno muda. O objeto parecerá ter mudado sua classe.
+O State é um padrão de projeto que permite que o estado de um objeto em contexto também possa ser representado como um objeto. 
+Isso permite usarmos polimorfismo ao invés de condicionais para mudar o comportamento do objeto contexto baseando-se no seu estado atual.
+
+-> Problema
+Imagine que você tem um pedido de um e-commerce (Order). Esse pedido pode estar em três estados de pagamento diferentes: 
+Aprovado (Approved), Recusado (Rejected) ou Pendente (Pending).
+Baseando-se no estado atual do pagamento do pedido, podemos adicionar algumas regras:
+
+O pedido só pode ser enviado ao cliente se seu estado de pagamento for aprovado
+Os estados podem transitar de aprovado para pendente e pendente para aprovado. Também de aprovado para recusado e pendente para recusado.
+Após recusado, o estado do pagamento não poderá mais ser alterado Essas regras são apenas para exemplo, mas você pode perceber que mesmo sendo 
+regras simples, poderíamos terminar com condicionais horríveis dentro da nossa classe Order, certo? Algo como:
+
+if (order.paymentState === 'Approved') {
+  doSomething();
+} else if (order.paymentState === 'Pending') {
+  doAnotherThing();
+} else if (order.paymentState === 'Rejected') {
+  doAnotherThing();
+}
+E isso só tende a piorar de acordo com o aumento das regras. Além de quebrarmos o princípio do aberto/fechado, nosso código tende a ficar cada vez mais complexo.
+
+-> Solução - State
+O State sugere que movamos o estado da classe Order para objetos de estado. Como Aprovado (Approved), Recusado (Rejected) ou Pendente (Pending).
+Todos esses estados teriam uma interface em comum com métodos para aprovar, recusar ou mover o pagamento para pendente: 
+approvePayment(order: Order), rejectPayment(order: Order) e waitPayment(order: Order). Além disso, também poderíamos adicionar métodos referentes aos estados, 
+por exemplo, um método shipOrder também caberia na interface de estados.
+
+Esses métodos se comportam de maneiras diferentes em cada uma das classes de estado concreto. Por exemplo: o método shipOrder só vai enviar o pedido se 
+a classe de estado for Approved. Nas classes Rejected ou Pending o mesmo método pode solicitar o pagamento ou algo do tipo. Além disso, os métodos também 
+podem receber o próprio objeto de contexto via parâmetro ou construtor, dessa forma os objetos de estado também podem manipular dados do contexto. 
+Por exemplo, na classe Approved, chamar o método approvePayment(order: Order) não precisaria fazer nada, mas o método rejectPayment(order: Order) deve 
+trocar o estado atual de Order para Rejected.
+Dessa forma, ao invés de condicionais estamos usando polimorfismo para mudar o comportamento dos objetos. Você pode escrever todo o código que descrevi 
+acima sem o uso de nenhuma condicional.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Decida qual classe atuará como o contexto. Pode ser uma classe existente que já tenha o código dependente do estado; ou uma nova classe, se o código 
+específico do estado for distribuído em várias classes.
+
+- Declare a interface de estado. Embora possa espelhar todos os métodos declarados no contexto, aponte apenas para aqueles que podem conter comportamento 
+específico do estado.
+
+- Para cada estado real, crie uma classe derivada da interface de estado. Em seguida, examine os métodos do contexto e extraia todo o código relacionado 
+a esse estado em sua classe recém-criada. Ao mover o código para a classe state, você pode descobrir que ele depende de membros privados do contexto. 
+Existem várias soluções alternativas:
+Torne esses campos ou métodos públicos.
+Transforme o comportamento que você está extraindo em um método público no contexto e chame-o da classe de estado. Esse caminho é feio, mas rápido, e 
+você sempre pode consertar depois.
+Aninhe as classes de estado na classe de contexto, mas somente se sua linguagem de programação oferecer suporte a classes de aninhamento.
+
+-Na classe de contexto, adicione um campo de referência do tipo de interface de estado e um setter público que permite substituir o valor desse campo.
+
+- Revise o método do contexto novamente e substitua as condicionais de estado vazias por chamadas aos métodos correspondentes do objeto de estado.
+
+- Para mudar o estado do contexto, crie uma instância de uma das classes de estado e passe-a para o contexto. Você pode fazer isso dentro do próprio contexto, 
+ou em vários estados, ou no cliente. Onde quer que isso seja feito, a classe se torna dependente da classe de estado concreta que ela instancia.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto State e se concentra nas seguintes questões:
+- Em que classes é composto?
+- Que funções essas classes desempenham?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+/* O Contexto define a interface de interesse dos clientes. Também mantém um referência a uma instância de uma subclasse State, que 
+representa o atual estado do Contexto.      */
+
+class Context {
+    // @type {State} Uma referência ao estado atual do Context.
+    private state: State;
+    constructor(state: State) {
+        this.transitionTo(state);
+    }
+
+    // O Context permite alterar o objeto State em tempo de execução.
+
+    public transitionTo(state: State): void {
+        console.log(`Context: Transition to ${(<any>state).constructor.name}.`);
+        this.state = state;
+        this.state.setContext(this);
+    }
+
+    // O Context delega parte de seu comportamento ao objeto State atual.
+
+    public request1(): void {
+        this.state.handle1();
+    }
+    public request2(): void {
+        this.state.handle2();
+    }
+}
+
+/* A classe base State declara métodos que todo Concrete State deve implementa e também fornece uma referência anterior ao objeto Context, associado
+com o Estado. Esta referência anterior pode ser usada pelos Estados para fazer a transição do Contexto para outro Estado. */
+
+abstract class State {
+    protected context: Context;
+    public setContext(context: Context) {
+        this.context = context;
+    }
+    public abstract handle1(): void;
+    public abstract handle2(): void;
+}
+
+// Os Estados Concretos implementam vários comportamentos, associados a um estado do Contexto.
+
+class ConcreteStateA extends State {
+    public handle1(): void {
+        console.log('ConcreteStateA handles request1.');
+        console.log('ConcreteStateA wants to change the state of the context.');
+        this.context.transitionTo(new ConcreteStateB());
+    }
+    public handle2(): void {
+        console.log('ConcreteStateA handles request2.');
+    }
+}
+class ConcreteStateB extends State {
+    public handle1(): void {
+        console.log('ConcreteStateB handles request1.');
+    }
+    public handle2(): void {
+        console.log('ConcreteStateB handles request2.');
+        console.log('ConcreteStateB wants to change the state of the context.');
+        this.context.transitionTo(new ConcreteStateA());
+    }
+}
+
+// Código do Cliente
+const context = new Context(new ConcreteStateA());
+context.request1();
+context.request2();
+
+
+-> Output.txt: Execution result
+Context: Transition to ConcreteStateA.
+ConcreteStateA handles request1.
+ConcreteStateA wants to change the state of the context.
+Context: Transition to ConcreteStateB.
+ConcreteStateB handles request2.
+ConcreteStateB wants to change the state of the context.
+Context: Transition to ConcreteStateA.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão State quando você tiver um objeto que se comporta de maneira diferente dependendo de seu estado atual, o número de estados for enorme e o 
+código específico do estado mudar com frequência. O padrão sugere que você extraia todo o código específico do estado em um conjunto de classes distintas. 
+Como resultado, você pode adicionar novos estados ou alterar os existentes independentemente uns dos outros, reduzindo o custo de manutenção.
+
+- Use o padrão quando tiver uma classe poluída com condicionais maciças que alteram como a classe se comporta de acordo com os valores atuais dos campos da classe.
+O padrão State permite extrair ramificações desses condicionais em métodos de classes de estado correspondentes. Ao fazer isso, você também pode limpar campos 
+temporários e métodos auxiliares envolvidos no código específico do estado de sua classe principal.
+
+- Use State quando tiver muito código duplicado em estados e transições semelhantes de uma máquina de estado baseada em condição.
+O padrão State permite compor hierarquias de classes de estado e reduzir a duplicação extraindo código comum em classes base abstratas.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Princípio da Responsabilidade Única. Organize o código relacionado a determinados estados em classes separadas.
+- Princípio Aberto/Fechado. Introduza novos estados sem alterar as classes de estado existentes ou o contexto.
+- Simplifique o código do contexto eliminando condicionais volumosos da máquina de estado.
+
+--> Contras
+- Aplicar o padrão pode ser um exagero se uma máquina de estado tiver apenas alguns estados ou raramente mudar.

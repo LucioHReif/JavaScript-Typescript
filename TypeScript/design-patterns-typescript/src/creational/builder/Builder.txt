@@ -1,0 +1,259 @@
+** BUILDER PATTERN **
+O padrão construtor permite criar diferentes tipos de um objeto sem usar um construtor em uma classe. Mas por que não podemos simplesmente usar um construtor?
+Bem, há um problema com o construtor em determinados cenários. Digamos que você tenha um modelo de usuário e tenha atributos como:
+
+export default class User {
+    firstName: string
+    lastName : string
+    gender: string
+    age: number
+    address: string
+    country: string
+    isAdmin: boolean
+
+    constructor(firstName,lastName,address,gender,age,country,isAdmin) {
+        this.firstName = builder.firstName
+        this.lastName = builder.lastName
+        this.address = builder.address
+        this.gender = builder.gender
+        this.age = builder.age
+        this.country = builder.country
+        this.isAdmin = builder.isAdmin
+    }
+}
+
+Para usar isso, você pode precisar instanciá-lo assim:
+const user = new User("","","","",22,"",false)
+
+Aqui, temos um argumento limitado. No entanto, será difícil manter uma vez que os atributos aumentam. Para resolver este problema, precisamos 
+do builder pattern. Crie uma classe Builder como esta:
+
+import User from './User'
+export default class UserBuilder {
+    firstName = ""
+    lastName = ""
+    gender = ""
+    age = 0
+    address = ""
+    country = ""
+    isAdmin = false
+
+    constructor(){  
+    }
+    setFirstName(firstName: string){
+        this.firstName = firstName
+    }
+    setLastName(lastName : string){
+        this.lastName = lastName
+    }
+    setGender(gender : string){
+        this.gender = gender
+    }
+    setAge(age : number){
+        this.age = age
+    }
+    setAddress(address : string){
+        this.address = address
+    }
+    setCountry(country : string){
+        this.country = country
+    }
+    setAdmin(isAdmin: boolean){
+        this.isAdmin = isAdmin
+    }
+    build() : User {
+        return new User(this)
+    }
+    getAllValues(){
+        return this
+    }
+}
+
+Aqui, usamos getter e setter para gerenciar os atributos em nossa classe Builder. Após isso, utilize a classe Builder dentro do nosso modelo:
+
+import UserBuilder from './UserBuilder'
+export default class User {
+    firstName: string
+    lastName : string
+    gender: string
+    age: number
+    address: string
+    country: string
+    isAdmin: boolean
+
+    constructor(builder : UserBuilder) {
+        this.firstName = builder.firstName
+        this.lastName = builder.lastName
+        this.address = builder.address
+        this.gender = builder.gender
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Certifique-se de que você pode definir claramente as etapas de construção comuns para construir todas as representações de produtos disponíveis. 
+Caso contrário, você não poderá prosseguir com a implementação do padrão.
+
+- Declare essas etapas na interface do construtor de base.
+
+- Crie uma classe de construtor concreta para cada uma das representações do produto e implemente suas etapas de construção.
+Não se esqueça de implementar um método para buscar o resultado da construção. A razão pela qual este método não pode ser declarado dentro da interface do 
+construtor é que vários construtores podem construir produtos que não possuem uma interface comum. Portanto, você não sabe qual seria o tipo de retorno para 
+tal método. No entanto, se você estiver lidando com produtos de uma única hierarquia, o método de busca pode ser adicionado com segurança à interface base.
+
+- Pense em criar uma classe de diretor. Ele pode encapsular várias maneiras de construir um produto usando o mesmo objeto construtor.
+
+- O código do cliente cria os objetos construtor e diretor. Antes de iniciar a construção, o cliente deve passar um objeto construtor para o diretor. 
+Normalmente, o cliente faz isso apenas uma vez, via parâmetros do construtor da classe do diretor. O diretor usa o objeto construtor em todas as construções 
+posteriores. Existe uma abordagem alternativa, onde o construtor é passado para um método de construção de produto específico do diretor.
+
+- O resultado da construção pode ser obtido diretamente com o diretor somente se todos os produtos seguirem a mesma interface. Caso contrário, o cliente deve buscar o resultado do construtor.
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Builder e se concentra nas seguintes questões:
+Em que classes é composto?
+Que funções essas classes desempenham?
+De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface Builder especifica métodos para criar as diferentes partes dos objetos Product.
+interface Builder {
+    producePartA(): void;
+    producePartB(): void;
+    producePartC(): void;
+}
+
+// As classes Concrete Builder seguem a interface Builder e fornecem implementações específicas das etapas de construção.
+// Seu programa pode ter diversas variações de Builders, implementadas de forma diferente.
+class ConcreteBuilder1 implements Builder {
+    private product: Product1;
+
+// Uma nova instância do construtor deve conter um objeto de produto em branco, que é usado na montagem posterior.
+    constructor() {
+        this.reset();
+    }
+    public reset(): void {
+        this.product = new Product1();
+    }
+
+// Todas as etapas de produção funcionam com a mesma instância do produto.
+    public producePartA(): void {
+        this.product.parts.push('PartA1');
+    }
+    public producePartB(): void {
+        this.product.parts.push('PartB1');
+    }
+    public producePartC(): void {
+        this.product.parts.push('PartC1');
+    }
+
+/* Os construtores de concreto devem fornecer seus próprios métodos para recuperar os resultados. Isso porque vários tipos de construtores podem criar
+produtos totalmente diferentes que não seguem a mesma interface. Portanto, tais métodos não podem ser declarados na interface base do Builder (pelo menos
+em uma linguagem de programação tipada estaticamente). Geralmente, após retornar o resultado final ao cliente, uma instância do construtor espera-se que 
+esteja pronto para começar a produzir outro produto. É por isso é uma prática comum chamar o método reset no final do Corpo do método `getProduct`. 
+No entanto, esse comportamento não é obrigatório e você pode fazer seus construtores esperarem por uma chamada de redefinição explícita do código do 
+cliente antes de descartar o resultado anterior.     */
+
+    public getProduct(): Product1 {
+        const result = this.product;
+        this.reset();
+        return result;
+    }
+}
+
+/* Faz sentido usar o padrão Builder apenas quando seus produtos são bastante complexo e requer configuração extensa. Ao contrário de outros padrões de 
+criação, diferentes construtores de concreto podem produzir produtos não relacionados. Em outras palavras, os resultados de vários construtores podem não
+seguir sempre a mesma interface.   */
+
+class Product1 {
+    public parts: string[] = [];
+    public listParts(): void {
+        console.log(`Product parts: ${this.parts.join(', ')}\n`);
+    }
+}
+
+/* O Diretor é responsável apenas por executar as etapas de construção em um sequência particular. É útil ao produzir produtos de acordo com um ordem ou 
+configuração específica. Estritamente falando, a classe Diretor é opcional, pois o cliente pode controlar os construtores diretamente.     */
+
+class Director {
+    private builder: Builder;
+
+/* O Diretor trabalha com qualquer instância do construtor que o código do cliente passa a ele. Desta forma, o código cliente pode alterar o tipo final 
+do recém produto montado. */
+
+    public setBuilder(builder: Builder): void {
+        this.builder = builder;
+    }
+
+// O Diretor pode construir diversas variações de produtos usando o mesmo etapas de construção.
+
+    public buildMinimalViableProduct(): void {
+        this.builder.producePartA();
+    }
+    public buildFullFeaturedProduct(): void {
+        this.builder.producePartA();
+        this.builder.producePartB();
+        this.builder.producePartC();
+    }
+}
+
+// O código do cliente cria um objeto construtor, passa para o diretor e depois inicia o processo de construção. O resultado final é obtido do objeto construtor.
+
+function clientCode(director: Director) {
+    const builder = new ConcreteBuilder1();
+    director.setBuilder(builder);
+
+    console.log('Standard basic product:');
+    director.buildMinimalViableProduct();
+    builder.getProduct().listParts();
+
+    console.log('Standard full featured product:');
+    director.buildFullFeaturedProduct();
+    builder.getProduct().listParts();
+
+    // Lembre-se, o padrão Builder pode ser usado sem uma classe Director.
+    console.log('Custom product:');
+    builder.producePartA();
+    builder.producePartC();
+    builder.getProduct().listParts();
+}
+const director = new Director();
+clientCode(director);
+
+-> Output.txt
+Standard basic product:
+Product parts: PartA1
+
+Standard full featured product:
+Product parts: PartA1, PartB1, PartC1
+
+Custom product:
+Product parts: PartA1, PartC1
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Builder para se livrar de um “construtor telescópico”. Digamos que você tenha um construtor com dez parâmetros opcionais. Chamar tal besta é
+muito inconveniente; portanto, você sobrecarrega o construtor e cria várias versões mais curtas com menos parâmetros. Esses construtores ainda se referem a
+o principal, passando alguns valores padrão em quaisquer parâmetros omitidos.
+class Pizza {
+    Pizza(int size) { ... }
+    Pizza(int size, boolean cheese) { ... }
+    Pizza(int size, boolean cheese, boolean pepperoni) { ... }
+    // ...
+A criação desse monstro só é possível em linguagens que suportam sobrecarga de método, como C# ou Java.
+O padrão Builder permite construir objetos passo a passo, usando apenas os passos que você realmente precisa. Depois de implementar o padrão, você não 
+precisa colocar mais dezenas de parâmetros em seus construtores.
+
+- Use o padrão Builder quando quiser que seu código seja capaz de criar diferentes representações de algum produto (por exemplo, casas de pedra e madeira).
+O padrão Builder pode ser aplicado quando a construção de várias representações do produto envolve etapas semelhantes que diferem apenas nos detalhes.
+A interface do construtor de base define todas as etapas de construção possíveis, e os construtores de concreto implementam essas etapas para construir 
+representações específicas do produto. Enquanto isso, a classe diretora orienta a ordem da construção.
+
+- Use para construir árvores compostas ou outros objetos complexos. O padrão Builder permite construir produtos passo a passo. Você poderia adiar execução 
+de algumas etapas sem quebrar o produto final. Você pode até chamar etapas recursivamente, o que é útil quando você precisa construir uma árvore de objetos. 
+Um construtor não expõe o produto inacabado enquanto executa as etapas de construção. Isso evita que o código do cliente obtenha um resultado incompleto.
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você pode construir objetos passo a passo, adiar etapas de construção ou executar etapas recursivamente.
+- Você pode reutilizar o mesmo código de construção ao criar várias representações de produtos.
+- Princípio da Responsabilidade Única. Você pode isolar o código de construção complexo da lógica de negócios do produto.
+
+--> Contras
+- A complexidade geral do código aumenta, pois o padrão requer a criação de várias novas classes.
+----------------------------------------------------------------------------------------------------------------------------------------------------------

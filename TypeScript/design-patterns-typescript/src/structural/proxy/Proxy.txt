@@ -1,0 +1,165 @@
+** PROXY **
+Proxy é um padrão de projeto muito similar a outros padrões que usam composição, como Composite e Decorator. Apesar disso, as intenções dos três padrões 
+são diferentes. A intenção do proxy é ter um objeto (o proxy) que fingirá ser o objeto real para controle de acesso. O objeto Proxy receberá as solicitações 
+que seriam enviadas ao objeto real e terá controle sobre como e quando encaminha-las (ou não) para objeto real. O objeto proxy atinge seu objetivo se 
+posicionando entre o código cliente e o objeto real.
+
+Isso é interessante em vários cenários. Por exemplo, o objeto proxy pode:
+- fazer cache de chamadas para objetos caros para o sistema
+- criar logs de acesso, avisos ou erros
+- controle de acesso (autenticação)
+- distribuir serviços
+- adiar instanciações (lazy instantiation) ou execuções (lazy evaluation)
+- e mais (as possibilidades são basicamente controladas pela sua criatividade)
+
+Com base no modo como os proxies são usados, o padrão pode ser classificado como:
+- Proxy Virtual: controla acesso a recursos que podem ser caros para criação ou utilização.
+- Proxy Remoto: controla acesso a recursos que estão em servidores remotos.
+- Proxy de proteção: controla acesso a recursos que possam necessitar autenticação ou permissão.
+- Proxy inteligente: além de controlar acesso ao objeto real, também executa tarefas adicionais para saber quando e como executar determinadas ações.
+
+Diferenças entre Composite, Decorator e Proxy - são padrões com estruturas semelhantes, porém com intenções diferentes, veja:
+Composite - compor objetos em estruturas de árvore para representarem hierarquias partes-todo. Composite permite aos cliente tratarem de maneira 
+uniforme objetos individuais e composições de objetos;
+Decorator - atribui responsabilidades adicionais a um objeto dinamicamente. Os Decorators fornecem uma alternativa flexível à subclasses para extensão 
+da funcionalidade;
+Proxy - fornece um objeto representante (surrogate), ou um marcador de outro objeto para controlar o acesso ao mesmo.
+
+Dentre esses três padrões, o Decorator e o Proxy tem mais semelhanças, por isso segue um trecho do livro da GoF detalhando a diferença:
+(GoF PT-BR pág. 209) ...Diferentemente do Decorator, o padrão Proxy não está preocupado em incluir ou excluir comportamentos dinamicamente e não está 
+projetado para composição recursiva. Sua intenção é fornecer um substituto para um objeto quando for inconveniente ou indesejável acessá-lo diretamente 
+porque, por exemplo, está numa máquina remota, tem acesso restrito ou é persistente.
+Apesar de estruturas parecidas, todas as intenções refletem exatamente o que cada padrão resolve.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Se não houver uma interface de serviço pré-existente, crie uma para tornar os objetos proxy e de serviço intercambiáveis. Extrair a interface da classe de 
+serviço nem sempre é possível, porque você precisaria alterar todos os clientes do serviço para usar essa interface. O plano B é tornar o proxy uma subclasse 
+da classe de serviço e, assim, herdar a interface do serviço.
+
+- Crie a classe proxy. Deve ter um campo para armazenar uma referência ao serviço. Normalmente, os proxies criam e gerenciam todo o ciclo de vida de seus serviços. 
+Em raras ocasiões, um serviço é passado para o proxy por meio de um construtor pelo cliente.
+
+- Implemente os métodos de proxy de acordo com seus propósitos. Na maioria dos casos, depois de fazer algum trabalho, o proxy deve delegar o trabalho 
+ao objeto de serviço.
+
+- Considere introduzir um método de criação que decida se o cliente obtém um proxy ou um serviço real. 
+Isso pode ser um método estático simples na classe proxy ou um método de fábrica completo.
+
+- Considere implementar a inicialização preguiçosa para o objeto de serviço.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Proxy e se concentra nas seguintes questões:
+- Em que classes consiste?
+- Que papéis desempenham essas classes?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface Subject declara operações comuns para RealSubject e o Procuração. 
+// Desde que o cliente trabalhe com RealSubject usando esta interface, você poderá passar um proxy em vez de um assunto real.
+
+interface Subject {
+    request(): void;
+}
+
+/* O RealSubject contém alguma lógica de negócios principal. Normalmente, RealSubjects são capaz de fazer algum trabalho útil que também pode ser muito 
+lento ou sensível - por exemplo, corrigindo os dados de entrada. Um Proxy pode resolver esses problemas sem qualquer mudanças no código do RealSubject.   */
+
+class RealSubject implements Subject {
+    public request(): void {
+        console.log('RealSubject: Handling request.');
+    }
+}
+
+// O Proxy possui uma interface idêntica ao RealSubject.
+
+class Proxy implements Subject {
+    private realSubject: RealSubject;
+
+// O Proxy mantém uma referência a um objeto da classe RealSubject. Ele pode ser carregado lentamente ou passado para o Proxy pelo cliente.
+
+    constructor(realSubject: RealSubject) {
+        this.realSubject = realSubject;
+    }
+
+// As aplicações mais comuns do padrão Proxy são carregamento lento, cache, controle de acesso, registro, etc. 
+// Um Proxy pode executar uma das essas coisas e depois, dependendo do resultado, passe a execução para o mesmo método em um objeto RealSubject vinculado.
+
+    public request(): void {
+        if (this.checkAccess()) {
+            this.realSubject.request();
+            this.logAccess();
+        }
+    }
+    private checkAccess(): boolean {
+        // Alguns cheques reais devem ir aqui.
+        console.log('Proxy: Checking access prior to firing a real request.');
+        return true;
+    }
+    private logAccess(): void {
+        console.log('Proxy: Logging the time of request.');
+    }
+}
+
+/* O código do cliente deve funcionar com todos os objetos (sujeitos e proxies) por meio da interface Subject para oferecer suporte a assuntos reais e
+procuradores. Na vida real, no entanto, os clientes trabalham principalmente com seus assuntos reais diretamente. 
+Nesse caso, para implementar o padrão com mais facilidade, você pode estender seu proxy da classe do sujeito real.      */
+
+function clientCode(subject: Subject) {
+    // ...
+    subject.request();
+    // ...
+}
+
+console.log('Client: Executing the client code with a real subject:');
+const realSubject = new RealSubject();
+clientCode(realSubject);
+console.log('');
+console.log('Client: Executing the same client code with a proxy:');
+const proxy = new Proxy(realSubject);
+clientCode(proxy);
+
+-> Output.txt
+Client: Executing the client code with a real subject:
+RealSubject: Handling request.
+
+Client: Executing the same client code with a proxy:
+Proxy: Checking access prior to firing a real request.
+RealSubject: Handling request.
+Proxy: Logging the time of request.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+Existem dezenas de maneiras de utilizar o padrão Proxy. Vamos examinar os usos mais populares.
+
+- Inicialização preguiçosa (proxy virtual). É quando você tem um objeto de serviço pesado que desperdiça recursos do sistema por estar sempre ativo, mesmo 
+que você só precise dele de vez em quando. Em vez de criar o objeto quando o aplicativo for iniciado, você pode atrasar a inicialização do objeto para um 
+momento em que seja realmente necessário.
+
+- Controle de acesso (proxy de proteção). É quando você deseja que apenas clientes específicos possam usar o objeto de serviço; por exemplo, quando seus 
+objetos são partes cruciais de um sistema operacional e os clientes são vários aplicativos iniciados (incluindo os maliciosos).
+O proxy pode passar a solicitação para o objeto de serviço apenas se as credenciais do cliente corresponderem a alguns critérios.
+
+- Execução local de um serviço remoto (proxy remoto). É quando o objeto de serviço está localizado em um servidor remoto.
+Nesse caso, o proxy passa a solicitação do cliente pela rede, cuidando de todos os detalhes desagradáveis ​​do trabalho com a rede.
+
+- Solicitações de log (proxy de log). É quando você deseja manter um histórico de solicitações ao objeto de serviço.
+O proxy pode registrar cada solicitação antes de transmiti-la ao serviço.
+
+- Cacheando os resultados da solicitação (caching proxy). É quando você precisa armazenar em cache os resultados das solicitações do cliente e gerenciar o 
+ciclo de vida desse cache, especialmente se os resultados forem muito grandes. O proxy pode implementar cache para solicitações recorrentes que sempre produzem 
+os mesmos resultados. O proxy pode usar os parâmetros das requisições como chaves de cache.
+
+- Referência inteligente. É quando você precisa descartar um objeto pesado, uma vez que não há clientes que o usem.
+O proxy pode acompanhar os clientes que obtiveram uma referência ao objeto de serviço ou seus resultados. De tempos em tempos, o proxy pode verificar os 
+clientes e verificar se eles ainda estão ativos. Se a lista de clientes ficar vazia, o proxy pode descartar o objeto de serviço e liberar os recursos 
+subjacentes do sistema.
+O proxy também pode rastrear se o cliente modificou o objeto de serviço. Em seguida, os objetos inalterados podem ser reutilizados por outros clientes.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você pode controlar o objeto de serviço sem que os clientes saibam disso.
+- Você pode gerenciar o ciclo de vida do objeto de serviço quando os clientes não se importam com isso.
+- O proxy funciona mesmo se o objeto de serviço não estiver pronto ou disponível.
+- Princípio Aberto/Fechado. Você pode introduzir novos proxies sem alterar o serviço ou os clientes.
+
+--> Contras
+- O código pode se tornar mais complicado, pois você precisa introduzir muitas classes novas.
+- A resposta do serviço pode demorar.

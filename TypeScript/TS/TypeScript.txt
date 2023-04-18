@@ -1,0 +1,25 @@
+O QUE É TYPESCRIPT?
+O TypeScript começou a ser desenvolvido pela Microsoft em 2012, com o objetivo de adicionar recursos e 
+ferramentas que não estão presentes nativamente na linguagem (ou que seriam muito mais complexos de serem 
+implementados), como tipagem estática (ou seja, os tipos das variáveis são definidos explicitamente no código) e orientação a objetos.
+Por isso, ele não é usualmente considerado como uma nova linguagem de programação, mas sim como um superconjunto 
+de JavaScript, pois o código é “transformado” (no termo técnico: transcompilado) em JavaScript “puro” antes de ser executado.
+
+Um arquivo TypeScript geralmente tem a extensão “.ts”. Por, no fundo, ainda ser JavaScript, qualquer código 
+nativo da linguagem pode ser adicionado em um arquivo desse formato, e programas escritos em JavaScript também 
+podem ser considerados programas TypeScript válidos. Há, também, suporte a várias bibliotecas JavaScript populares, 
+como Angular, Vue.js, D3.js, entre outras. Sites e aplicativos criados com TypeScript podem ser executados tanto no
+lado do cliente (diretamente no navegador do usuário, por exemplo) quanto no lado do servidor (com Node.js).
+
+
+COMO FUNCIONA?
+Código TypeScript pode ser escrito em qualquer ambiente de desenvolvimento. No entanto, para transformá-lo em JavaScript 
+e aproveitar outros recursos úteis, como checagem de erros, é necessário instalá-lo no computador via NPM (um gerenciador 
+de pacotes JavaScript) ou usar uma IDE com suporte nativo ao superconjunto, como o Visual Studio. Também é possível usar 
+TypeScript com outros compiladores que suportam a linguagem, como Babel, swc ou Sucrase.
+
+
+Principais vantagens
+A principal vantagem do TypeScript em relação ao JavaScript “tradicional” é adicionar recursos importantes e úteis para a 
+construção de projetos em larga escala, como tipagem estática, forte e automática, orientação a objetos e a possibilidade 
+de descobrir e corrigir erros em tempo real durante o desenvolvimento.

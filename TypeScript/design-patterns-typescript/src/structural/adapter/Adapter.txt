@@ -1,0 +1,153 @@
+** ADAPTER PATTERN **
+Um exemplo clássico de um padrão de adaptador será uma tomada de forma diferente. Às vezes, o soquete e o plugue do dispositivo não se encaixam. 
+Para garantir que funcione, usaremos um adaptador. Isso é exatamente o que vamos fazer no padrão do adaptador. É um processo de agrupar o objeto 
+incompatível em um adaptador para torná-lo compatível com outra classe. Até agora vimos uma analogia para entender o padrão do adaptador. 
+Deixe-me apresentar um caso de uso real em que um padrão de adaptador pode salvar vidas. Considere que temos uma classe CustomerError:
+
+import IError from '../interface/IError'
+export default class CustomError implements IError{
+    message : string
+    constructor(message : string){
+        this.message = message
+    }
+    serialize() {
+        return this.message
+    }
+}
+
+Agora, estamos usando essa classe CustomError em nosso aplicativo. Depois de algum tempo, precisamos alterar o método na classe por algum motivo.
+A nova classe Custom Error será mais ou menos assim:
+
+export default class NewCustomError{
+    message : string
+    constructor(message : string){
+        this.message = message    
+    }
+    withInfo() {
+        return { message : this.message } 
+    }
+}
+
+Nossa nova alteração travará todo o aplicativo, pois altera o método. Para resolver esse problema, o padrão do adaptador entra em ação.
+Vamos criar uma classe Adapter e resolver este problema:
+
+import NewCustomError from './NewCustomError'
+// import CustomError from './CustomError'
+export default class ErrorAdapter {
+    message : string;
+    constructor(message : string) {
+        this.message = message
+    }
+    serialize() {
+              // In future replace this function
+        const e = new NewCustomError(this.message).withInfo()
+        return e
+    }
+}
+
+O método serialize é o que usamos em toda a nossa aplicação. Nosso aplicativo não precisa saber qual classe estamos usando.
+A classe Adapter cuida disso para nós.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Certifique-se de ter pelo menos duas classes com interfaces incompatíveis:
+Uma classe de serviço útil, que você não pode alterar (geralmente de terceiros, legado ou com muitas dependências existentes).
+Uma ou várias classes de cliente que se beneficiariam do uso da classe de serviço.
+
+- Declare a interface do cliente e descreva como os clientes se comunicam com o serviço.
+
+- Crie a classe do adaptador e faça-a seguir a interface do cliente. Deixe todos os métodos vazios por enquanto.
+
+- Adicione um campo à classe do adaptador para armazenar uma referência ao objeto de serviço. A prática comum é inicializar esse campo por meio do 
+construtor, mas às vezes é mais conveniente passá-lo para o adaptador ao chamar seus métodos.
+
+- Um por um, implemente todos os métodos da interface do cliente na classe do adaptador. O adaptador deve delegar a maior parte do trabalho real ao 
+objeto de serviço, manipulando apenas a interface ou a conversão do formato de dados.
+
+- Os clientes devem usar o Adapter por meio da interface do cliente, permitindo que você altere ou estenda os adaptadores sem afetar o código do cliente.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Adapter e se concentra nas seguintes questões:
+- Em que classes é composto?
+- Que funções essas classes desempenham?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// O Target define a interface específica do domínio usada pelo código do cliente.
+
+class Target {
+    public request(): string {
+        return 'Target: The default target\'s behavior.';
+    }
+}
+
+// O Adaptee contém alguns comportamentos úteis, mas sua interface é incompatível com o código cliente existente.
+// O Adaptee precisa de alguma adaptação antes que o código do cliente possa usá-lo.
+
+class Adaptee {
+    public specificRequest(): string {
+        return '.eetpadA eht fo roivaheb laicepS';
+    }
+}
+
+// O Adaptador torna a interface do Adaptee compatível com a interface do Target.
+
+class Adapter extends Target {
+    private adaptee: Adaptee;
+    constructor(adaptee: Adaptee) {
+        super();
+        this.adaptee = adaptee;
+    }
+    public request(): string {
+        const result = this.adaptee.specificRequest().split('').reverse().join('');
+        return `Adapter: (TRANSLATED) ${result}`;
+    }
+}
+
+// O código cliente suporta todas as classes que seguem a interface Target.
+
+function clientCode(target: Target) {
+    console.log(target.request());
+}
+
+console.log('Cliente: Eu posso trabalhar muito bem com os objetos Target:');
+const target = new Target();
+clientCode(target);
+console.log('');
+const adaptee = new Adaptee();
+console.log('Cliente: A classe Adaptee tem uma interface estranha. Veja, eu não entendo isso:');
+console.log(`Adaptee: ${adaptee.specificRequest()}`);
+console.log('');
+console.log('Cliente: Mas posso trabalhar com ele através do Adapter:');
+const adapter = new Adapter(adaptee);
+clientCode(adapter);
+
+-> Output.txt
+Cliente: Eu posso trabalhar muito bem com os objetos Target:
+Alvo: o comportamento padrão do alvo.
+
+Cliente: A classe Adaptee tem uma interface estranha. Veja, não entendi:
+Adaptado: .eetpadA eht para roivaheb laiceps
+
+Cliente: Mas posso trabalhar com ele através do Adapter:
+Adapter: (TRADUZIDO) Comportamento especial do Adaptee.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use a classe Adapter quando quiser usar alguma classe existente, mas sua interface não for compatível com o restante do seu código.
+O padrão Adapter permite criar uma classe de camada intermediária que serve como um tradutor entre seu código e uma classe herdada, uma classe de 
+terceiros ou qualquer outra classe com uma interface estranha.
+
+- Use o padrão quando quiser reutilizar várias subclasses existentes que carecem de alguma funcionalidade comum que não pode ser adicionada à superclasse.
+Você pode estender cada subclasse e colocar a funcionalidade ausente em novas classes filhas. No entanto, você precisará duplicar o código em todas essas 
+novas classes, o que cheira muito mal.
+A solução muito mais elegante seria colocar a funcionalidade ausente em uma classe de adaptador. Em seguida, você envolveria objetos com recursos ausentes 
+dentro do adaptador, obtendo os recursos necessários dinamicamente. Para que isso funcione, as classes de destino devem ter uma interface comum e o campo 
+do adaptador deve seguir essa interface. Essa abordagem é muito semelhante ao padrão Decorator.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Princípio da Responsabilidade Única. Você pode separar a interface ou o código de conversão de dados da lógica de negócios principal do programa.
+- Princípio Aberto/Fechado. Você pode introduzir novos tipos de adaptadores no programa sem interromper o código do cliente existente, desde que eles 
+funcionem com os adaptadores por meio da interface do cliente.
+ 
+--> Contras
+- A complexidade geral do código aumenta porque você precisa introduzir um conjunto de novas interfaces e classes. 
+Às vezes é mais simples apenas alterar a classe de serviço para que corresponda ao resto do seu código.

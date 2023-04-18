@@ -1,0 +1,126 @@
+** DECORATOR **
+O Decorator é uma padrão de projeto usado para adicionar funcionalidades a objetos já criados, ou seja, sem a necessidade de alterar nenhum código. 
+Isso faz com que este padrão aplique naturalmente o princípio do aberto/fechado (classes devem estar abertas para extensão, mas fechadas para modificação).
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Certifique-se de que seu domínio comercial possa ser representado como um componente principal com várias camadas opcionais sobre ele.
+
+- Descubra quais métodos são comuns ao componente primário e às camadas opcionais. Crie uma interface de componente e declare esses métodos lá.
+
+- Crie uma classe de componente concreta e defina o comportamento básico dela.
+
+- Crie uma classe de decorador base. Deve ter um campo para armazenar uma referência a um objeto envolvido. O campo deve ser declarado com o tipo de interface do componente para permitir a vinculação a componentes concretos, bem como decoradores. O decorador de base deve delegar todo o trabalho ao objeto envolvido.
+
+- Certifique-se de que todas as classes implementem a interface do componente.
+
+- Crie decoradores de concreto estendendo-os a partir do decorador de base. Um decorador concreto deve executar seu comportamento antes ou depois da chamada ao método pai (que sempre delega ao objeto envolvido).
+
+- O código cliente deve ser o responsável por criar decoradores e compô-los da forma que o cliente precisa.
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Decorator e se concentra nas seguintes questões:
+- Em que classes consiste?
+- Que papéis desempenham essas classes?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface base do componente define as operações que podem ser alteradas por Decoradores.
+
+interface Component {
+    operation(): string;
+}
+
+// Os Componentes Concretos fornecem implementações padrão das operações. Lá podem ser diversas variações dessas classes.
+
+class ConcreteComponent implements Component {
+    public operation(): string {
+        return 'ConcreteComponent';
+    }
+}
+
+/* A classe Decorator base segue a mesma interface dos outros componentes. O objetivo principal desta classe é definir a interface de empacotamento 
+para todos decoradores de concreto. A implementação padrão do código de encapsulamento pode incluir um campo para armazenar um componente encapsulado 
+e os meios para inicializar isto.           */
+
+class Decorator implements Component {
+    protected component: Component;
+    constructor(component: Component) {
+        this.component = component;
+    }
+// O decorador delega todo o trabalho ao componente envolvido.
+
+    public operation(): string {
+        return this.component.operation();
+    }
+}
+
+// Concrete Decorators chamam o objeto embrulhado e alteram seu resultado de alguma forma.
+
+class ConcreteDecoratorA extends Decorator {
+    public operation(): string {
+        return `ConcreteDecoratorA(${super.operation()})`;
+    }
+}
+
+// Os decoradores podem chamar a implementação pai da operação, em vez de chamar o objeto envolvido diretamente.
+// Essa abordagem simplifica a extensão das classes decoradoras.
+
+// Os decoradores podem executar seu comportamento antes ou depois da chamada para um objeto agrupado.
+
+class ConcreteDecoratorB extends Decorator {
+    public operation(): string {
+        return `ConcreteDecoratorB(${super.operation()})`;
+    }
+}
+
+// O código cliente funciona com todos os objetos usando a interface Component. Desta forma, pode ficar independente das classes concretas de 
+componentes que trabalha com.
+
+function clientCode(component: Component) {
+    // ...
+    console.log(`RESULT: ${component.operation()}`);
+    // ...
+}
+
+// Dessa forma, o código do cliente pode suportar componentes simples...
+
+const simple = new ConcreteComponent();
+console.log('Client: I\'ve got a simple component:');
+clientCode(simple);
+console.log('');
+
+// ...assim como os decorados.
+// Observe como os decoradores podem agrupar não apenas componentes simples, mas também os outros decoradores.
+
+const decorator1 = new ConcreteDecoratorA(simple);
+const decorator2 = new ConcreteDecoratorB(decorator1);
+console.log('Client: Now I\'ve got a decorated component:');
+clientCode(decorator2);
+
+-> Output.txt 
+Client: I've got a simple component:
+RESULT: ConcreteComponent
+
+Client: Now I've got a decorated component:
+RESULT: ConcreteDecoratorB(ConcreteDecoratorA(ConcreteComponent))
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Decorator quando precisar atribuir comportamentos extras a objetos em tempo de execução sem quebrar o código que usa esses objetos.
+O Decorator permite estruturar sua lógica de negócios em camadas, criar um decorador para cada camada e compor objetos com várias combinações dessa 
+lógica em tempo de execução. O código cliente pode tratar todos esses objetos da mesma forma, pois todos seguem uma interface comum.
+
+- Use o padrão quando for difícil ou impossível estender o comportamento de um objeto usando herança.
+Muitas linguagens de programação têm a palavra-chave final que pode ser usada para impedir a extensão adicional de uma classe. 
+Para uma classe final, a única maneira de reutilizar o comportamento existente seria agrupar a classe com seu próprio wrapper, usando o padrão Decorator.
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você pode estender o comportamento de um objeto sem criar uma nova subclasse.
+- Você pode adicionar ou remover responsabilidades de um objeto em tempo de execução.
+- Você pode combinar vários comportamentos agrupando um objeto em vários decoradores.
+- Princípio da Responsabilidade Única. Você pode dividir uma classe monolítica que implementa muitas variantes possíveis de comportamento em várias classes menores.
+
+--> Contras
+- É difícil remover um wrapper específico da pilha de wrappers.
+- É difícil implementar um decorador de forma que seu comportamento não dependa da ordem na pilha de decoradores.
+- O código de configuração inicial das camadas pode parecer muito feio.
+ 

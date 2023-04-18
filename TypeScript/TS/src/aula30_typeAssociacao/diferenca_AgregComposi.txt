@@ -1,0 +1,35 @@
+*****DIFERENÇAS ENTRE COMPOSIÇÃO E AGREGAÇÃO*****
+
+COMPOSIÇÃO
+Considere o caso da composição. No seu exemplo, todo item pertence a um pedido, e não existe fora do contexto de um pedido.
+Talvez fosse possível mover um item de um pedido a outro, mas na prática isso não faz muito sentido. Dessa forma, temos algumas implicações:
+
+--> Uma classe Item pode ter uma referência para o seu Pedido. Se tiver, essa referência não aceitaria valores nulos;
+--> O construtor de Item deveria receber um parâmetro obrigatório especificando qual o Pedido a que pertence
+(seja pra atribuir a propriedade mencionada acima, seja para outros propósitos).
+Não faz sentido criar um objeto de Item sem saber qual é o objeto Pedido correspondente;
+
+A classe Pedido pode ter métodos para listar seus itens, reordená-los, acrescentar ou remover itens, etc, mas isso deve ser feito de forma
+consistente com as regras da composição:
+--> Se o construtor de Item é público, criar o item deve automaticamente adicioná-lo ao pedido. Nesse caso, a classe Pedido não teria métodos
+para "adicionar" - uma vez que isso é feito simplesmente instanciando a classe Item;
+--> Caso contrário, o Pedido é o único que poderia criar itens - agindo como uma fábrica para os mesmos.
+--> Ao se remover um item de um pedido, o mesmo deve ser excluído completamente (ou marcado como tal, se tornando inutilizável).
+--> Por fim, ao implementar a persistência desses objetos, é importante garantir que os itens não existam sem pedidos (ex.: num banco de dados,
+a chave estrangeira de item pra pedido seria "não-nullable").
+-------------------------------------------------------------------------------------------------------------------------------------------------
+AGREGAÇÃO
+Já no caso da agregação, a API seria diferente. Se tivermos por exemplo uma classe Funcionario que por sua vez pertence a um Departamento.
+A princípio, poderíamos ter funcionários sem departamento fixo, ou talvez funcionários movendo-se de um departamento para outro.
+Nesse caso, as implicações seriam as seguintes:
+--> Uma classe Funcionario pode ter uma referência para o seu Departamento. Se tiver, essa referência deve aceitar valores nulos;
+--> A classe Funcionario deve ter ao menos um construtor sem parâmetro para Departamento. E os construtores que recebem esse parâmetro devem
+aceitar um valor nulo. Pois nesse caso faz sim sentido criar um objeto de Funcionario sem um objeto Departamento correspondente;
+
+A classe Departamento pode ter métodos para listar, acrescentar, remover, etc, mas isso deve ser feito de forma consistente com a agregação:
+--> Os métodos para adicionar devem receber objetos Funcionario pontos; esses métodos seriam então responsáveis por atribuir o funcionário ao
+departamento e, se necessário, removendo-o do seu departamento anterior caso exista (ou recusando sua inserção, conforme o caso);
+--> Os métodos para remover deveriam então colocar o funcionário num estado "sem departamento", mas deixando ele "vivo"
+(i.e. sem excluir o objeto, tornando possível que ela seja usado e/ou reinserido num departamento diferente).
+--> Ao implementar a persistência desses objetos, deve-se permitir funcionários sem departamento (ex.: num banco de dados, a chave estrangeira
+de funcionario pra departamento seria nullable).

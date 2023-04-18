@@ -1,0 +1,74 @@
+** O que são Design Patterns no TypeScript? **
+São as melhores práticas implementadas pelos desenvolvedores. Eles resolvem problemas gerais que ocorrem durante a fase de 
+desenvolvimento de software. Esses padrões de design são inventados após várias rodadas de tentativa e erro durante um período de tempo.
+
+-> O que é a Gangue dos Quatro (GoF - Gang of Four)?
+Em 1994, quatro autores, Erich Gamma, Richard Helm, Ralph Johnson e John Vlissides, publicaram um livro chamado “Design Patterns: 
+Elements of Reusable Object-Oriented Software”. Esses autores são popularmente conhecidos como Gang of Four (GoF).
+
+-> Quais são os diferentes tipos de padrões de projeto?
+Existem três tipos de padrões de projeto. Eles são:
+- Criacional: se preocupa com a maneira como criamos objetos em um estilo orientado a objetos. Ele aplica padrões na forma como instanciamos uma classe.
+- Estrutural: se preocupa com a forma como nossas classes e objetos são compostos para formar uma estrutura maior em nosso aplicativo.
+- Comportamental: se preocupa com a forma como os objetos podem interagir de forma eficiente sem serem fortemente acoplados.
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+** Anti-patterns no Typescript **
+
+-> Uso excessivo de any type
+Definir any type para variáveis ​​e funções é um dos erros comuns no mundo do TypeScript. 
+Quando você usa any type, ele remove completamente a finalidade da verificação de tipo no aplicativo.
+
+-> Complexidade de classe
+Como você sabe, o TypeScript permite que você escreva código nos paradigmas orientado a objetos (OOP) e programação funcional (FP). 
+Porém, a maioria dos desenvolvedores com experiência em Java e C# tende a escolher a abordagem OOP. 
+Mas, quando precisamos apenas de uma única instância, envolvê-la com classe não é necessário. Isso trará complicações ao seu aplicativo. 
+Essencialmente, há dois conceitos a serem considerados ao criar seu aplicativo com TypeScript: instanciação de classe e definição de um literal de objeto.
+
+-> Instanciação de classe
+Uma vez que definimos a classe e queremos usar a classe dentro do aplicativo, precisamos chamar o construtor para obter a instância da classe. 
+Se a lógica precisar de uma única instância, ela poderá trazer complexidade adicional ao aplicativo. Também precisamos decidir quem cria a instância e 
+quando fazê-lo. Mesmo que não seja um grande problema, ainda traz alguma complexidade.
+Para resolver esse problema e quando um aplicativo precisa apenas de uma única instância, podemos definir um objeto literal que elimina a necessidade de 
+chamar o construtor.
+
+-> Definindo um literal de objeto
+Antes de implementarmos o objeto literal, vamos ver como obter a funcionalidade com uma abordagem baseada em classe:
+
+ class HelloWorld {
+  getNameById(id:string): string {
+   return "Typescript Design Patterns";
+  }
+}
+
+const hello = new HelloWorld()
+hello.getNameById();
+
+// Vamos implementar a mesma funcionalidade usando objeto literal:
+
+const HelloWorld = {
+  getNameById(id:string):string {
+   return "Typescript Design Patterns";
+  }
+}
+HelloWorld.getNameById();
+Os literais de objeto evitam complicações desnecessárias no código. Você pode não precisar da classe se precisar apenas de uma única instância. 
+Você pode implementar o mesmo com objeto literal.
+
+
+-> Usando a função type
+Ao implementar o retorno de chamada de função no TypeScript, é importante definir o tipo para as funções que são passadas como parâmetro dentro das 
+funções de retorno de chamada. Embora o TypeScript nos permita usar o tipo Function, isso não é recomendado. É semelhante a definir qualquer tipo aplicado 
+a uma função. Em vez de defini-lo como tipo de função, você pode defini-lo com tipos de parâmetro de entrada e resposta.
+Em vez de definir o tipo Function assim:
+
+type IFunction = {
+  handleFunction(callback: Function)
+}
+
+// Você pode definir uma função com tipos de parâmetro de entrada e resposta:
+
+type ICallbackFn = (value: string): string
+type IFunction {
+ handleFunction(callback: ICallbackFn)
+}
+

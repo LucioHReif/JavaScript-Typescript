@@ -1,0 +1,142 @@
+** VISITOR **
+Representa uma operação a ser executada sobre os elementos da estrutura de um objeto. 
+O visitor permite que você separe um algoritmo dos elementos sobre os quais opera.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Declare a interface do visitante com um conjunto de métodos de “visita”, um para cada classe de elemento concreto existente no programa.
+
+- Declare a interface do elemento. Se você estiver trabalhando com uma hierarquia de classe de elemento existente, adicione o método abstrato de “aceitação” 
+à classe base da hierarquia. Este método deve aceitar um objeto visitante como argumento.
+
+- Implementar os métodos de aceitação em todas as classes de elementos de concreto. Esses métodos devem simplesmente redirecionar a chamada para um método 
+visitante no objeto visitante recebido que corresponda à classe do elemento atual.
+
+- As classes de elemento devem funcionar apenas com visitantes por meio da interface do visitante. Os visitantes, no entanto, devem estar cientes de todas 
+as classes de elementos concretos, referenciadas como tipos de parâmetros dos métodos visitantes.
+
+- Para cada comportamento que não pode ser implementado dentro da hierarquia de elementos, crie uma nova classe de visitante concreta e implemente todos os 
+métodos de visita. Você pode encontrar uma situação em que o visitante precisará acessar alguns membros privados da classe do elemento. 
+Nesse caso, você pode tornar esses campos ou métodos públicos, violando o encapsulamento do elemento, ou aninhar a classe do visitante na classe do elemento. 
+O último só é possível se você tiver a sorte de trabalhar com uma linguagem de programação que suporte classes aninhadas.
+
+- O cliente deve criar objetos visitantes e passá-los para elementos por meio de métodos de “aceitação”.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto State e se concentra nas seguintes questões:
+- Em que classes é composto?
+- Que funções essas classes desempenham?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface Component declara um método `accept` que deve tomar a interface base do visitante como um argumento.
+interface Component {
+    accept(visitor: Visitor): void;
+}
+// Cada Componente Concreto deve implementar o método `accept` de forma que chame o método do visitante correspondente à classe do componente.
+class ConcreteComponentA implements Component {
+    public accept(visitor: Visitor): void {
+        visitor.visitConcreteComponentA(this);
+    }
+    public exclusiveMethodOfConcreteComponentA(): string {
+        return 'A';
+    }
+}
+    // Observe que estamos chamando `visitConcreteComponentA`, que corresponde ao nome da classe atual.
+    // Desta forma informamos ao visitante a classe do componente com o qual trabalha.
+   
+    /* Componentes concretos podem ter métodos especiais que não existem em seus classe base ou interface. 
+    O Visitante ainda pode usar esses métodos desde que esteja ciente da classe concreta do componente.     */
+
+class ConcreteComponentB implements Component {
+    // Same here: visitConcreteComponentB => ConcreteComponentB
+    public accept(visitor: Visitor): void {
+        visitor.visitConcreteComponentB(this);
+    }
+    public specialMethodOfConcreteComponentB(): string {
+        return 'B';
+    }
+}
+
+// A interface do visitante declara um conjunto de métodos de visita que correspondem às classes de componentes.
+// A assinatura de um método visitante permite que o visitante identifique a classe exata do componente com o qual está lidando.
+
+interface Visitor {
+    visitConcreteComponentA(element: ConcreteComponentA): void;
+    visitConcreteComponentB(element: ConcreteComponentB): void;
+}
+
+/* Concrete Visitors implementam várias versões do mesmo algoritmo, que podem trabalhar com todas as classes de componentes concretos.
+
+Você pode experimentar o maior benefício do padrão Visitor ao usá-lo com uma estrutura de objeto complexa, como uma árvore composta. 
+Neste caso, pode ser útil para armazenar algum estado intermediário do algoritmo enquanto executando os métodos do visitante sobre vários objetos da estrutura.     */
+
+class ConcreteVisitor1 implements Visitor {
+    public visitConcreteComponentA(element: ConcreteComponentA): void {
+        console.log(`${element.exclusiveMethodOfConcreteComponentA()} + ConcreteVisitor1`);
+    }
+    public visitConcreteComponentB(element: ConcreteComponentB): void {
+        console.log(`${element.specialMethodOfConcreteComponentB()} + ConcreteVisitor1`);
+    }
+}
+class ConcreteVisitor2 implements Visitor {
+    public visitConcreteComponentA(element: ConcreteComponentA): void {
+        console.log(`${element.exclusiveMethodOfConcreteComponentA()} + ConcreteVisitor2`);
+    }
+    public visitConcreteComponentB(element: ConcreteComponentB): void {
+        console.log(`${element.specialMethodOfConcreteComponentB()} + ConcreteVisitor2`);
+    }
+}
+
+/* O código do cliente pode executar operações do visitante em qualquer conjunto de elementos sem  descobrir suas classes concretas. 
+A operação de aceitação direciona uma chamada para a operação apropriada no objeto visitante.       */
+
+function clientCode(components: Component[], visitor: Visitor) {
+    // ...
+    for (const component of components) {
+        component.accept(visitor);
+    }
+    // ...
+}
+const components = [
+    new ConcreteComponentA(),
+    new ConcreteComponentB(),
+];
+
+console.log('The client code works with all visitors via the base Visitor interface:');
+const visitor1 = new ConcreteVisitor1();
+clientCode(components, visitor1);
+console.log('');
+console.log('It allows the same client code to work with different types of visitors:');
+const visitor2 = new ConcreteVisitor2();
+clientCode(components, visitor2);
+
+
+-> Output.txt: Execution result
+The client code works with all visitors via the base Visitor interface:
+A + ConcreteVisitor1
+B + ConcreteVisitor1
+
+It allows the same client code to work with different types of visitors:
+A + ConcreteVisitor2
+B + ConcreteVisitor2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o Visitor quando precisar executar uma operação em todos os elementos de uma estrutura de objeto complexa (por exemplo, uma árvore de objeto).
+O padrão Visitor permite que você execute uma operação sobre um conjunto de objetos com diferentes classes fazendo com que um objeto Visitor implemente 
+diversas variantes da mesma operação, que correspondem a todas as classes de destino.
+
+- Use o Visitor para limpar a lógica de negócios dos comportamentos auxiliares. O padrão permite tornar as classes primárias de seu aplicativo mais focadas 
+em seus trabalhos principais, extraindo todos os outros comportamentos em um conjunto de classes de visitantes.
+
+- Use o padrão quando um comportamento fizer sentido apenas em algumas classes de uma hierarquia de classes, mas não em outras. Você pode extrair esse 
+comportamento em uma classe de visitante separada e implementar apenas os métodos de visita que aceitam objetos de classes relevantes, deixando o restante vazio.
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós
+- Princípio Aberto/Fechado. Você pode introduzir um novo comportamento que pode funcionar com objetos de diferentes classes sem alterar essas classes.
+- Princípio da Responsabilidade Única. Você pode mover várias versões do mesmo comportamento para a mesma classe.
+- Um objeto visitante pode acumular algumas informações úteis enquanto trabalha com vários objetos. 
+Isso pode ser útil quando deseja-se percorrer alguma estrutura de objeto complexa, como uma árvore de objetos, e aplicar o visitante a cada objeto dessa estrutura.
+
+--> Contras
+- Você precisa atualizar todos os visitantes sempre que uma classe é adicionada ou removida da hierarquia de elementos.
+- Os visitantes podem não ter o acesso necessário aos campos e métodos privados dos elementos com os quais devem trabalhar.

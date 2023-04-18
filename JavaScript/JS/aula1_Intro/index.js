@@ -1,0 +1,1 @@
+console.log('Meu nome é "Lúcio" e estou aprendendo java às ' + 4 + ' horas da tarde'); //da pra usar , para concatenar

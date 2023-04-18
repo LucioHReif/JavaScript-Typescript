@@ -1,0 +1,181 @@
+** COMPOSITE **
+O composite é um padrão de projeto que permite ao cliente tratar um único objeto ou uma estrutura formada de vários objetos aninhados hierarquicamente 
+da mesma maneira. Na vida real lidamos com o padrão composite o tempo todo. Por exemplo, pense em produtos que podem ser comprados por unidade ou em 
+caixas (como leite, cerveja, refrigerante e outros). Você pode ir ao supermercado e comprar um único produto. Ele vai contar com um código de barras. 
+No entanto, você também pode comprar uma caixa do mesmo produto. Ela também vai contar com um código de barras da mesma maneira.
+
+Perceba que o supermercado trata uma estrutura inteira de objetos (a caixa de produtos) como um único objeto com código de barras e preço. Porém, se o 
+cliente quiser, também pode obter um único produto de dentro da caixa e realizar a compra da mesmíssima maneira que fizemos com a caixa. 
+Ambos, a caixa e o produto possuem seus próprios códigos de barra.
+
+O padrão Composite é exatamente isso: podemos tratar um único objeto ou uma estrutura de objetos da mesma maneira. Conseguimos isso através um uma 
+interface em comum entre objetos compostos (caixa) e objetos folha (produtos).
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Certifique-se de que o modelo principal do seu aplicativo possa ser representado como uma estrutura de árvore. Tente dividi-lo em elementos e 
+recipientes simples. Lembre-se de que os contêineres devem poder conter elementos simples e outros contêineres.
+
+- Declare a interface do componente com uma lista de métodos que façam sentido para componentes simples e complexos.
+
+- Crie uma classe folha para representar elementos simples. Um programa pode ter várias classes de folhas diferentes.
+
+- Crie uma classe de contêiner para representar elementos complexos. Nesta classe, forneça um campo de matriz para armazenar referências a subelementos. 
+A matriz deve ser capaz de armazenar folhas e contêineres, portanto, certifique-se de que seja declarada com o tipo de interface do componente.
+Ao implementar os métodos da interface do componente, lembre-se de que um contêiner deve delegar a maior parte do trabalho aos subelementos.
+
+- Por fim, defina os métodos para adicionar e remover elementos filhos no contêiner.
+Lembre-se de que essas operações podem ser declaradas na interface do componente. Isso violaria o princípio de segregação de interface porque os métodos 
+estarão vazios na classe folha. Porém, o cliente poderá tratar todos os elementos igualmente, mesmo na hora de compor a árvore.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Composite e se concentra nas seguintes questões:
+Em que classes é composto?
+Que funções essas classes desempenham?
+De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A classe base Component declara operações comuns para objetos simples e complexos de uma composição.
+
+abstract class Component {
+    protected parent!: Component | null;
+
+/* Opcionalmente, o componente base pode declarar uma interface para configurar e acessar um pai do componente em uma estrutura de árvore.
+Ele também pode fornecer alguma implementação padrão para esses métodos. */
+
+    public setParent(parent: Component | null) {
+        this.parent = parent;
+    }
+    public getParent(): Component | null {
+        return this.parent;
+    }
+
+/* Em alguns casos, seria benéfico definir o controle da criança operações diretamente na classe Component base. Dessa forma, você não precisará
+expor quaisquer classes de componentes concretos ao código do cliente, mesmo durante o montagem da árvore de objetos. 
+A desvantagem é que esses métodos estarão vazios para os componentes de nível folha.        */
+
+    public add(component: Component): void { }
+    public remove(component: Component): void { }
+
+//Você pode fornecer um método que permite que o código do cliente descubra se um componente pode ter filhos.
+
+    public isComposite(): boolean {
+        return false;
+    }
+    public abstract operation(): string;
+}
+
+// O Componente base pode implementar algum comportamento padrão ou deixá-lo para classes concretas 
+// (declarando o método que contém o comportamento como "abstrato").
+
+// A classe Leaf representa os objetos finais de uma composição. Uma folha não pode ter qualquer criança.
+// Geralmente, são os objetos Leaf que fazem o trabalho real, enquanto o Composite os objetos apenas delegam para seus subcomponentes.
+ 
+class Leaf extends Component {
+    public operation(): string {
+        return 'Leaf';
+    }
+}
+
+// A classe Composite representa os componentes complexos que podem ter filhos.
+// Normalmente, os objetos Composite delegam o trabalho real para seus filhos e então "somam" o resultado.
+
+class Composite extends Component {
+    protected children: Component[] = [];
+
+// Um objeto composto pode adicionar ou remover outros componentes (simples ou complexos) para ou de sua lista de filhos.
+
+    public add(component: Component): void {
+        this.children.push(component);
+        component.setParent(this);
+    }
+    public remove(component: Component): void {
+        const componentIndex = this.children.indexOf(component);
+        this.children.splice(componentIndex, 1);
+
+        component.setParent(null);
+    }
+    public isComposite(): boolean {
+        return true;
+    }
+
+/* O Composite executa sua lógica primária de uma maneira particular. Isto  percorre recursivamente todos os seus filhos, coletando e somando
+seus resultados. Como os filhos do composto passam essas chamadas para seus filhos e assim por diante, toda a árvore de objetos é percorrida como resultado.   */
+
+    public operation(): string {
+        const results = [];
+        for (const child of this.children) {
+            results.push(child.operation());
+        }
+        return `Branch(${results.join('+')})`;
+    }
+}
+
+// O código do cliente funciona com todos os componentes por meio da interface básica.
+
+function clientCode(component: Component) {
+    // ...
+    console.log(`RESULT: ${component.operation()}`);
+    // ...
+}
+
+// Dessa forma, o código do cliente pode suportar os componentes simples da folha...
+
+const simple = new Leaf();
+console.log('Client: I\'ve got a simple component:');
+clientCode(simple);
+console.log('');
+
+// ...bem como os compostos complexos.
+
+const tree = new Composite();
+const branch1 = new Composite();
+branch1.add(new Leaf());
+branch1.add(new Leaf());
+const branch2 = new Composite();
+branch2.add(new Leaf());
+tree.add(branch1);
+tree.add(branch2);
+console.log('Client: Now I\'ve got a composite tree:');
+clientCode(tree);
+console.log('');
+
+/* Graças ao fato de que as operações de gerenciamento de filhos são declaradas no classe Component base, o código do cliente pode funcionar com 
+qualquer componente, simples ou complexo, sem depender de suas classes concretas.
+
+function clientCode2(component1: Component, component2: Component) {
+    // ...
+    if (component1.isComposite()) {
+        component1.add(component2);
+    }
+    console.log(`RESULT: ${component1.operation()}`);
+    // ...
+}
+
+console.log('Client: I don\'t need to check the components classes even when managing the tree:');
+clientCode2(tree, simple);
+
+-> Output.txt
+Client: I've got a simple component:
+RESULT: Leaf
+
+Client: Now I've got a composite tree:
+RESULT: Branch(Branch(Leaf+Leaf)+Branch(Leaf))
+
+Client: I don't need to check the components classes even when managing the tree:
+RESULT: Branch(Branch(Leaf+Leaf)+Branch(Leaf)+Leaf)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Composite quando precisar implementar uma estrutura de objeto semelhante a uma árvore. O padrão Composite fornece dois tipos básicos de 
+elementos que compartilham uma interface comum: folhas simples e contêineres complexos. Um recipiente pode ser composto tanto por folhas quanto por outros 
+recipientes. Isso permite construir uma estrutura de objeto recursiva aninhada que se assemelha a uma árvore.
+
+- Use o padrão quando desejar que o código do cliente trate elementos simples e complexos de maneira uniforme. Todos os elementos definidos pelo padrão 
+Composite compartilham uma interface comum. Usando esta interface, o cliente não precisa se preocupar com a classe concreta dos objetos com os quais trabalha.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós
+- Você pode trabalhar com estruturas de árvore complexas de forma mais conveniente: use o polimorfismo e a recursão a seu favor.
+- Princípio Aberto/Fechado. Você pode introduzir novos tipos de elementos no aplicativo sem quebrar o código existente, que agora funciona com a árvore de objetos.
+
+--> Contras
+- Pode ser difícil fornecer uma interface comum para classes cuja funcionalidade difere muito. Em certos cenários, você precisaria generalizar demais a 
+interface do componente, tornando-a mais difícil de compreender.

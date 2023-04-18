@@ -1,0 +1,17 @@
+O que é express?
+Express é uma estrutura de aplicativo da web node js que fornece recursos amplos para a criação de aplicativos da web e móveis. 
+Ele é usado para criar uma página única, várias páginas e um aplicativo da Web híbrido.
+É uma camada construída no topo do Node js que ajuda a gerenciar servidores e rotas
+
+npm init -y   //inicializa
+npm install express --save-dev  //instala o express no devDependencies
+npm instal express --save-prod  //tranfere o express para o dependencies
+npm install express@4.0.0   //instala versão especifica
+npm update  //aprimora para a ultima versão, caso aja alguma atualização
+npm i webpack --save-dev   //instala o webpack no devDependencies
+npm ls  //mostra todos os recursos exixstentes
+npm ls --depth=0  //mostra todos os recursos que foram instalados
+npm ls --depth=1  //mostra o numero da pasta dos recursos que foram instalados
+npm outdated  //mostra os recursos que precisam ser atualizados
+npm install express@4.x  //atualiza para a ultima versão da 4.0
+npm uninstall webpack express  //desinstala ps recursos que foram instalados

@@ -1,0 +1,165 @@
+** ITERATOR **
+Fornece uma maneira de acessar sequencialmente os elementos de um objeto agregado sem expor sua representação subjacente.
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Declare a interface do iterador. No mínimo, deve ter um método para buscar o próximo elemento de uma coleção. Mas, por conveniência, você pode 
+adicionar alguns outros métodos, como buscar o elemento anterior, rastrear a posição atual e verificar o final da iteração.
+
+- Declare a interface de coleção e descreva um método para buscar iteradores. O tipo de retorno deve ser igual ao da interface do iterador. 
+Você pode declarar métodos semelhantes se planeja ter vários grupos distintos de iteradores.
+
+- Implemente classes iteradoras concretas para as coleções que você deseja que possam ser percorridas com iteradores. Um objeto iterador deve ser 
+vinculado a uma única instância de coleção. Normalmente, esse link é estabelecido por meio do construtor do iterador.
+
+- Implemente a interface de coleção em suas classes de coleção. A ideia principal é fornecer ao cliente um atalho para criar iteradores, adaptados 
+para uma determinada classe de coleção. O objeto da coleção deve passar para o construtor do iterador para estabelecer um link entre eles.
+
+- Examine o código do cliente para substituir todo o código de travessia da coleção pelo uso de iteradores. O cliente busca um novo objeto iterador 
+cada vez que precisa iterar sobre os elementos da coleção.
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Iterator e foca nas seguintes questões:
+Em que classes é composto?
+Que funções essas classes desempenham?
+De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// Iterator Design Pattern - Permite percorrer elementos de uma coleção sem expor sua representação subjacente (lista, pilha, árvore, etc.).
+
+interface Iterator<T> {
+    // Retorna o elemento atual.
+    current(): T;
+    // Retorna o elemento atual e avança para o próximo elemento.
+    next(): T;
+    // Retorna a chave do elemento atual.
+    key(): number;
+    // Verifica se a posição atual é válida.
+    valid(): boolean;
+    // Rebobine o Iterator para o primeiro elemento.
+    rewind(): void;
+}
+
+interface Aggregator {
+    // Recupere um iterador externo.
+    getIterator(): Iterator<string>;
+}
+
+// Concrete Iterators implement various traversal algorithms. These classes store the current traversal position at all times.
+
+class AlphabeticalOrderIterator implements Iterator<string> {
+    private collection: WordsCollection;
+
+/* Armazena a posição transversal atual. Um iterador pode ter muitos outros campos para armazenar o estado da iteração, especialmente 
+quando é suposto para trabalhar com um determinado tipo de coleção.      */
+
+    private position: number = 0;
+// Esta variável indica a direção da travessia.
+
+    private reverse: boolean = false;
+    constructor(collection: WordsCollection, reverse: boolean = false) {
+        this.collection = collection;
+        this.reverse = reverse;
+        if (reverse) {
+            this.position = collection.getCount() - 1;
+        }
+    }
+    public rewind() {
+        this.position = this.reverse ?
+            this.collection.getCount() - 1 :
+            0;
+    }
+    public current(): string {
+        return this.collection.getItems()[this.position];
+    }
+    public key(): number {
+        return this.position;
+    }
+    public next(): string {
+        const item = this.collection.getItems()[this.position];
+        this.position += this.reverse ? -1 : 1;
+        return item;
+    }
+    public valid(): boolean {
+        if (this.reverse) {
+            return this.position >= 0;
+        }
+        return this.position < this.collection.getCount();
+    }
+}
+
+// Coleções concretas fornecem um ou vários métodos para recuperar novas instâncias do iterador, compatíveis com a classe de coleção.
+
+class WordsCollection implements Aggregator {
+    private items: string[] = [];
+    public getItems(): string[] {
+        return this.items;
+    }
+    public getCount(): number {
+        return this.items.length;
+    }
+    public addItem(item: string): void {
+        this.items.push(item);
+    }
+    public getIterator(): Iterator<string> {
+        return new AlphabeticalOrderIterator(this);
+    }
+    public getReverseIterator(): Iterator<string> {
+        return new AlphabeticalOrderIterator(this, true);
+    }
+}
+
+// O código do cliente pode ou não saber sobre o Concrete Iterator ou Collection classes, dependendo do nível de indireção que você deseja manter em seu programa
+
+const collection = new WordsCollection();
+collection.addItem('First');
+collection.addItem('Second');
+collection.addItem('Third');
+const iterator = collection.getIterator();
+console.log('Straight traversal:');
+
+while (iterator.valid()) {
+    console.log(iterator.next());
+}
+console.log('');
+console.log('Reverse traversal:');
+const reverseIterator = collection.getReverseIterator();
+
+while (reverseIterator.valid()) {
+    console.log(reverseIterator.next());
+}
+
+-> Output.txt
+Straight traversal:
+First
+Second
+Third
+
+Reverse traversal:
+Third
+Second
+First
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Iterator quando sua coleção tiver uma estrutura de dados complexa sob o capô, mas você deseja ocultar sua complexidade dos clientes 
+(seja por conveniência ou por motivos de segurança). O iterador encapsula os detalhes do trabalho com uma estrutura de dados complexa, fornecendo ao 
+cliente vários métodos simples de acesso aos elementos da coleção. Embora essa abordagem seja muito conveniente para o cliente, ela também protege a 
+coleção de ações descuidadas ou maliciosas que o cliente poderia executar se trabalhasse diretamente com a coleção.
+
+- Use o padrão para reduzir a duplicação do código de passagem em seu aplicativo.
+O código de algoritmos de iteração não triviais tende a ser muito volumoso. Quando colocado dentro da lógica de negócios de um aplicativo, pode confundir 
+a responsabilidade do código original e torná-lo menos sustentável. Mover o código de passagem para iteradores designados pode ajudá-lo a tornar o código 
+do aplicativo mais enxuto e limpo.
+
+- Use o Iterator quando quiser que seu código seja capaz de percorrer diferentes estruturas de dados ou quando os tipos dessas estruturas forem 
+desconhecidos de antemão. O padrão fornece algumas interfaces genéricas para coleções e iteradores. Dado que seu código agora usa essas interfaces, 
+ele ainda funcionará se você passar vários tipos de coleções e iteradores que implementam essas interfaces.
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Princípio da Responsabilidade Única. Você pode limpar o código do cliente e as coleções extraindo algoritmos de travessia volumosos em classes separadas.
+- Princípio Aberto/Fechado. Você pode implementar novos tipos de coleções e iteradores e passá-los para o código existente sem quebrar nada.
+- Você pode iterar na mesma coleção em paralelo porque cada objeto iterador contém seu próprio estado de iteração.
+- Pela mesma razão, você pode atrasar uma iteração e continuá-la quando necessário.
+
+--> Contras
+- Aplicar o padrão pode ser um exagero se seu aplicativo funcionar apenas com coleções simples.
+- Usar um iterador pode ser menos eficiente do que passar diretamente por elementos de algumas coleções especializadas.

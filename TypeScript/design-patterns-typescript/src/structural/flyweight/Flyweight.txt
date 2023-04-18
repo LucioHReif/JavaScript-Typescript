@@ -1,0 +1,165 @@
+** FLYWEIGHT **
+O Flyweight visa dividir um objeto em dois estados: o estado intrínseco e o estado extrínseco.
+
+O estado intrínseco de um objeto é a parte que nunca muda ou muda poucas vezes dentro do sistema. Por exemplo, imagine um objeto de endereço de um 
+cliente com os seguintes dados: rua, número, bairro, cidade, cep, complemento, etc... O estado intrínseco deste objeto seriam as coisas que podem 
+se repetir de cliente para cliente. Pense comigo, se vários clientes são do mesmo bairro, sabemos que outros dados também não mudam, como cidade e cep. 
+Esses são parte do estado intrínseco do objeto de endereço.
+
+Por outro lado temos o estado extrínseco. Esse estado mantém dados que estão constantemente variando. No caso do endereço, o número, o complemento 
+e os dados do cliente mudam para cada localização. Esses valores podem ser movidos para fora do objeto a fim de liberar a memória que podem consumir.
+
+Observação: este é um exemplo fictício apenas para facilitar seu entendimento. Você precisa analisar caso a caso.
+A solução que o Flyweight entrega é bastante intuitiva:
+- separe o estado do objeto em intrínseco e extrínseco;
+- mantenha o estado intrínseco dentro do objeto de forma imutável (geralmente configurado pelo construtor), já que ele será compartilhado com outros objetos;
+- quando necessário, receba o restante dos dados (o estado extrínseco) no método que precisar desses dados;
+- para evitar a duplicação de objetos flyweight, usa-se uma fábrica que verifica se um flyweight precisa ser criado ou se foi criado anteriormente. 
+Recomenda-se que o código cliente use somente a fábrica para criar novos flyweights ou obter flyweights já criados.
+
+Apesar de intuitivo, isso gera bastante complexidade no sistema, por isso é necessário analisar com cuidado essa situação. Ao separar o estado de 
+um objeto, precisaremos de uma forma de unir esses dados novamente no momento do uso. Segundo o livro da GoF, isso pode ser feito no contexto que 
+o cliente estiver, ou seja, pode ser gerenciado pelo próprio código cliente da maneira que preferir.
+Além disso, eles também recomendam que você só use o padrão Flyweight em uma condição bastante específica
+-------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Divida os campos de uma classe que se tornará um flyweight em duas partes:
+o estado intrínseco: os campos que contêm dados imutáveis ​​duplicados em muitos objetos
+o estado extrínseco: os campos que contêm dados contextuais exclusivos para cada objeto
+
+- Deixe os campos que representam o estado intrínseco na classe, mas certifique-se de que sejam imutáveis. 
+Eles devem receber seus valores iniciais apenas dentro do construtor.
+
+- Examine os métodos que usam campos do estado extrínseco. Para cada campo usado no método, introduza um novo parâmetro e use-o no lugar do campo.
+
+- Opcionalmente, crie uma classe de fábrica para gerenciar o pool de flyweights. Ele deve verificar se há um flyweight existente antes de criar um novo. 
+Uma vez instalada a fábrica, os clientes devem apenas solicitar flyweights através dela. Eles devem descrever o flyweight desejado passando seu estado 
+intrínseco para a fábrica.
+
+- O cliente deve armazenar ou calcular valores do estado extrínseco (contexto) para poder chamar métodos de objetos flyweight. Por conveniência, 
+o estado extrínseco junto com o campo de referência flyweight pode ser movido para uma classe de contexto separada.
+-------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de projeto Flyweight e se concentra nas seguintes questões:
+- Em que classes consiste?
+- Que papéis desempenham essas classes?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// O Flyweight armazena uma parte comum do estado (também chamado de estado intrínseco) que pertence a várias entidades de negócios reais.
+// O Flyweight aceita o resto do estado (estado extrínseco, único para cada entidade) através de seus parâmetros de método.
+
+class Flyweight {
+    private sharedState: any;
+    constructor(sharedState: any) {
+        this.sharedState = sharedState;
+    }
+    public operation(uniqueState): void {
+        const s = JSON.stringify(this.sharedState);
+        const u = JSON.stringify(uniqueState);
+        console.log(`Flyweight: Displaying shared (${s}) and unique (${u}) state.`);
+    }
+}
+
+//A Flyweight Factory cria e gerencia os objetos Flyweight. Ele garante que os flyweights sejam compartilhados corretamente.
+// Quando o cliente solicita um flyweight, a fábrica retorna uma instância existente ou cria uma nova, caso ainda não exista.
+
+class FlyweightFactory {
+    private flyweights: {[key: string]: Flyweight} = <any>{};
+    constructor(initialFlyweights: string[][]) {
+        for (const state of initialFlyweights) {
+            this.flyweights[this.getKey(state)] = new Flyweight(state);
+        }
+    }
+
+// Retorna um hash de string do Flyweight para um determinado estado.
+
+    private getKey(state: string[]): string {
+        return state.join('_');
+    }
+
+// Retorna um Flyweight existente com um determinado estado ou cria um novo.
+
+    public getFlyweight(sharedState: string[]): Flyweight {
+        const key = this.getKey(sharedState);
+        if (!(key in this.flyweights)) {
+            console.log('FlyweightFactory: Can\'t find a flyweight, creating new one.');
+            this.flyweights[key] = new Flyweight(sharedState);
+        } else {
+            console.log('FlyweightFactory: Reusing existing flyweight.');
+        }
+        return this.flyweights[key];
+    }
+
+    public listFlyweights(): void {
+        const count = Object.keys(this.flyweights).length;
+        console.log(`\nFlyweightFactory: I have ${count} flyweights:`);
+        for (const key in this.flyweights) {
+            console.log(key);
+        }
+    }
+}
+
+// O código do cliente geralmente cria um monte de flyweights pré-preenchidos no estágio de inicialização do aplicativo.
+
+const factory = new FlyweightFactory([
+    ['Chevrolet', 'Camaro2018', 'pink'],
+    ['Mercedes Benz', 'C300', 'black'],
+    ['Mercedes Benz', 'C500', 'red'],
+    ['BMW', 'M5', 'red'],
+    ['BMW', 'X6', 'white'],
+    // ...
+]);
+factory.listFlyweights();
+// ...
+
+function addCarToPoliceDatabase(
+    ff: FlyweightFactory, plates: string, owner: string,
+    brand: string, model: string, color: string,
+) {
+    console.log('\nClient: Adding a car to database.');
+    const flyweight = ff.getFlyweight([brand, model, color]);
+
+// O código do cliente armazena ou calcula o estado extrínseco e o passa para os métodos do flyweight.
+    flyweight.operation([plates, owner]);
+}
+addCarToPoliceDatabase(factory, 'CL234IR', 'James Doe', 'BMW', 'M5', 'red');
+addCarToPoliceDatabase(factory, 'CL234IR', 'James Doe', 'BMW', 'X1', 'red');
+factory.listFlyweights();
+
+-> Output.txt
+FlyweightFactory: I have 5 flyweights:
+Chevrolet_Camaro2018_pink
+Mercedes Benz_C300_black
+Mercedes Benz_C500_red
+BMW_M5_red
+BMW_X6_white
+
+Client: Adding a car to database.
+FlyweightFactory: Reusing existing flyweight.
+Flyweight: Displaying shared (["BMW","M5","red"]) and unique (["CL234IR","James Doe"]) state.
+
+Client: Adding a car to database.
+FlyweightFactory: Can't find a flyweight, creating new one.
+Flyweight: Displaying shared (["BMW","X1","red"]) and unique (["CL234IR","James Doe"]) state.
+
+FlyweightFactory: I have 6 flyweights:
+Chevrolet_Camaro2018_pink
+Mercedes Benz_C300_black
+Mercedes Benz_C500_red
+BMW_M5_red
+BMW_X6_white
+BMW_X1_red
+-------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Flyweight somente quando seu programa tiver que suportar um grande número de objetos que mal cabem na RAM disponível.
+O benefício de aplicar o padrão depende muito de como e onde ele é usado. É mais útil quando: 
+um aplicativo precisa gerar um grande número de objetos semelhantes isso esgota toda a RAM disponível em um dispositivo de destino os 
+objetos contêm estados duplicados que podem ser extraídos e compartilhados entre vários objetos
+-------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Você pode economizar muita RAM, supondo que seu programa tenha muitos objetos semelhantes.
+
+--> Contras
+- Você pode estar trocando RAM por ciclos de CPU quando alguns dos dados de contexto precisam ser recalculados toda vez que alguém chama um método flyweight.
+- O código se torna muito mais complicado. Os novos membros da equipe sempre se perguntarão por que o estado de uma entidade foi separado dessa maneira.

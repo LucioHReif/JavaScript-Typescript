@@ -1,0 +1,154 @@
+** MEDIATOR **
+O Mediator é um padrão de projeto muito simples. Basicamente ele sugere a criação de um objeto central que faz a mediação da comunicação 
+entre outros objetos. Imagine um botão que só pode ser ativado quando todos os campos de input do formulário forem validados (isso é super comum). 
+Nesse caso, muitas pessoas poderiam acoplar os inputs ao objeto do botão a fim de fazer tal validação e, quando necessário, ativar este botão para 
+envio do formulário.
+
+Isso pode gerar transtorno e um código super complexo e acoplado dependendo da quantidade de validações e quantos elementos de input existirem. 
+Além de dificultar a reusabilidade de classes em outros locais do sistema. O mediator nos diz que ao invés de acoplar as classes, devemos criar um único 
+objeto central que toma conta dos botões e dos inputs (o objeto mediador). Nesse caso, os botões e inputs podem notificar o mediador quando for necessário.
+
+Por exemplo, se existem dois campos de Email/Password, e um botão Submit que só pode ser ativado quando Email e Password forem propriamente validados. 
+O objeto mediador pode ser notificado através de um método quando as validações forem concluídas e, em resposta, ativar o botão Submit. Perceba que, com o 
+objeto Mediator, nenhuma das classes de input ou botão se conhecem, elas conhecem apenas o objeto mediador, que executa as ações necessárias quando achar 
+conveniente.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Identifique um grupo de classes fortemente acopladas que se beneficiariam por serem mais independentes (por exemplo, para manutenção mais fácil ou 
+reutilização mais simples dessas classes).
+
+- Declare a interface do mediador e descreva o protocolo de comunicação desejado entre os mediadores e vários componentes. Na maioria dos casos, um único 
+método para receber notificações de componentes é suficiente. Essa interface é crucial quando você deseja reutilizar classes de componentes em diferentes 
+contextos. Desde que o componente trabalhe com seu mediador por meio da interface genérica, você pode vincular o componente a uma implementação diferente 
+do mediador.
+
+- Implemente a classe de mediador concreto. Considere armazenar referências a todos os componentes dentro do mediador. Dessa forma, você poderia chamar 
+qualquer componente dos métodos do mediador.
+
+- Você pode ir ainda mais longe e tornar o mediador responsável pela criação e destruição de objetos componentes. Depois disso, o mediador pode se assemelhar
+a uma fábrica ou fachada.
+
+- Os componentes devem armazenar uma referência ao objeto mediador. A conexão geralmente é estabelecida no construtor do componente, onde um objeto mediador 
+é passado como argumento.
+
+- Altere o código dos componentes para que eles chamem o método de notificação do mediador em vez de métodos em outros componentes. Extraia o código que 
+envolve a chamada de outros componentes para a classe mediadora. Execute este código sempre que o mediador receber notificações desse componente.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Exemplo Conceitual
+Este exemplo ilustra a estrutura do padrão de design Mediator e se concentra nas seguintes questões:
+- Em que classes consiste?
+- Que papéis desempenham essas classes?
+- De que maneira os elementos do padrão estão relacionados?
+
+-> index.ts
+// A interface Mediator declara um método usado por componentes para notificar o mediador sobre vários eventos.
+// O Mediator pode reagir a esses eventos e passar a execução para outros componentes.
+
+interface Mediator {
+    notify(sender: object, event: string): void;
+}
+
+// Mediadores concretos implementam comportamento cooperativo coordenando vários componentes.
+
+class ConcreteMediator implements Mediator {
+    private component1: Component1;
+    private component2: Component2;
+    constructor(c1: Component1, c2: Component2) {
+        this.component1 = c1;
+        this.component1.setMediator(this);
+        this.component2 = c2;
+        this.component2.setMediator(this);
+    }
+    public notify(sender: object, event: string): void {
+        if (event === 'A') {
+            console.log('Mediator reacts on A and triggers following operations:');
+            this.component2.doC();
+        }
+        if (event === 'D') {
+            console.log('Mediator reacts on D and triggers following operations:');
+            this.component1.doB();
+            this.component2.doC();
+        }
+    }
+}
+
+// O Componente Base fornece a funcionalidade básica de armazenar uma instância do mediador dentro dos objetos do componente.
+
+class BaseComponent {
+    protected mediator: Mediator;
+    constructor(mediator?: Mediator) {
+        this.mediator = mediator!;
+    }
+    public setMediator(mediator: Mediator): void {
+        this.mediator = mediator;
+    }
+}
+
+// Os Componentes Concretos implementam várias funcionalidades. Eles não dependem de outros componentes. 
+// Eles também não dependem de nenhuma classe mediadora concreta.
+
+class Component1 extends BaseComponent {
+    public doA(): void {
+        console.log('Component 1 does A.');
+        this.mediator.notify(this, 'A');
+    }
+    public doB(): void {
+        console.log('Component 1 does B.');
+        this.mediator.notify(this, 'B');
+    }
+}
+class Component2 extends BaseComponent {
+    public doC(): void {
+        console.log('Component 2 does C.');
+        this.mediator.notify(this, 'C');
+    }
+    public doD(): void {
+        console.log('Component 2 does D.');
+        this.mediator.notify(this, 'D');
+    }
+}
+
+// Código do Cliente
+const c1 = new Component1();
+const c2 = new Component2();
+const mediator = new ConcreteMediator(c1, c2);
+console.log('Client triggers operation A.');
+c1.doA();
+console.log('');
+console.log('Client triggers operation D.');
+c2.doD();
+
+-> Output.txt
+Client triggers operation A.
+Component 1 does A.
+Mediator reacts on A and triggers following operations:
+Component 2 does C.
+
+Client triggers operation D.
+Component 2 does D.
+Mediator reacts on D and triggers following operations:
+Component 1 does B.
+Component 2 does C.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Mediator quando for difícil alterar algumas das classes porque elas estão fortemente acopladas a várias outras classes.
+O padrão permite extrair todos os relacionamentos entre as classes em uma classe separada, isolando quaisquer alterações em um componente específico do 
+restante dos componentes.
+
+- Use o padrão quando não puder reutilizar um componente em um programa diferente porque é muito dependente de outros componentes. Depois de aplicar o 
+Mediador, os componentes individuais tornam-se inconscientes dos outros componentes. Eles ainda podem se comunicar uns com os outros, embora indiretamente, 
+por meio de um objeto mediador. Para reutilizar um componente em um aplicativo diferente, você precisa fornecer a ele uma nova classe mediadora.
+
+- Use o Mediator quando estiver criando toneladas de subclasses de componentes apenas para reutilizar algum comportamento básico em vários contextos.
+Como todas as relações entre os componentes estão contidas no mediador, é fácil definir maneiras totalmente novas para esses componentes colaborarem, 
+introduzindo novas classes de mediador, sem precisar alterar os próprios componentes.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós 
+- Princípio da Responsabilidade Única. Você pode extrair as comunicações entre vários componentes em um único local, facilitando a compreensão e a manutenção.
+- Princípio Aberto/Fechado. Você pode introduzir novos mediadores sem precisar alterar os componentes reais.
+- Você pode reduzir o acoplamento entre vários componentes de um programa.
+- Você pode reutilizar componentes individuais com mais facilidade.
+ 
+--> Contras
+- Com o tempo, um mediador pode evoluir para um Objeto Divino.
+

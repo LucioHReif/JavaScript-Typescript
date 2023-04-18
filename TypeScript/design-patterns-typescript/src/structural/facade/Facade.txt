@@ -1,0 +1,197 @@
+** FACADE PATTERN **
+O padrão de fachada nos permite agrupar funções ou módulos semelhantes dentro de uma única interface. Dessa forma, o cliente não precisa saber nada sobre 
+como funciona internamente. Um bom exemplo disso seria inicializar seu computador. Você não precisa saber o que acontece dentro do computador quando você 
+o liga. Você só precisa apertar um botão. Dessa forma, o padrão de fachada nos ajuda a fazer lógica de alto nível sem a necessidade de implementar tudo 
+pelo cliente. 
+Vamos pegar como exemplo um perfil de usuário onde temos as seguintes funcionalidades:
+Sempre que uma conta de usuário é desativada, precisamos atualizar o status e atualizar os dados bancários.
+Vamos usar o padrão de fachada para implementar essa lógica em nossa aplicação:
+
+import IUser from '../Interfaces/IUser'
+export default class User {
+    private firstName: string
+    private lastName: string
+    private bankDetails: string | null
+    private age: number
+    private role: string
+    private isActive: boolean
+
+    constructor({firstName,lastName,bankDetails,age,role,isActive} : IUser){
+        this.firstName = firstName
+        this.lastName = lastName
+        this.bankDetails = bankDetails
+        this.age = age
+        this.role = role
+        this.isActive = isActive
+    }
+    getBasicInfo() {
+        return {
+            firstName: this.firstName,
+            lastName: this.lastName,
+            age : this.age,
+            role: this.role
+        }
+    }
+    activateUser() {
+        this.isActive = true
+    }
+    updateBankDetails(bankInfo: string | null) {
+        this.bankDetails= bankInfo
+    }
+    getBankDetails(){
+        return this.bankDetails
+    }
+    deactivateUser() {
+        this.isActive = false
+    }
+    getAllDetails() {
+        return this
+    }
+}
+export default interface IUser {
+    firstName: string
+    lastName: string
+    bankDetails: string
+    age: number
+    role: string
+    isActive: boolean
+}
+
+// Por fim, nossa classe Fachada será:
+
+import User from '../module/User'
+export default class UserFacade{
+    protected user: User
+    constructor(user : User){
+        this.user = user
+    }
+    activateUserAccount(bankInfo : string){
+        this.user.activateUser()
+        this.user.updateBankDetails(bankInfo)
+
+        return this.user.getAllDetails()
+    }
+    deactivateUserAccount(){
+        this.user.deactivateUser()
+        this.user.updateBankDetails(null)
+    }
+
+}
+Aqui, combinamos os métodos que precisamos chamar sempre que uma conta de usuário for desativada.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Como implementar
+- Verifique se é possível fornecer uma interface mais simples do que um subsistema existente já fornece. Você está no caminho certo se esta interface 
+torna o código do cliente independente de muitas das classes do subsistema.
+
+- Declare e implemente essa interface em uma nova classe de facade. A facade deve redirecionar as chamadas do código cliente para os objetos apropriados 
+do subsistema. A facade deve ser responsável por inicializar o subsistema e gerenciar seu ciclo de vida posterior, a menos que o código do cliente já faça isso.
+
+- Para obter todos os benefícios do padrão, faça com que todo o código do cliente se comunique com o subsistema apenas por meio da facade. 
+Agora o código do cliente está protegido contra quaisquer alterações no código do subsistema. Por exemplo, quando um subsistema é atualizado para uma 
+nova versão, você só precisará modificar o código na facade.
+
+- Se a facade ficar muito grande, considere extrair parte de seu comportamento para uma nova classe de fachada refinada.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Conceptual Example
+This example illustrates the structure of the Facade design pattern and focuses on the following questions:
+What classes does it consist of?
+What roles do these classes play?
+In what way the elements of the pattern are related?
+
+-> index.ts
+/* A classe Facade fornece uma interface simples para a lógica complexa de um ou vários subsistemas. 
+A Fachada delega as solicitações do cliente ao objetos apropriados dentro do subsistema. 
+A Fachada também é responsável por gerenciar seu ciclo de vida. Tudo isso blinda o cliente dos indesejados complexidade do subsistema.   */
+
+class Facade {
+    protected subsystem1: Subsystem1;
+    protected subsystem2: Subsystem2;
+
+//Dependendo das necessidades da sua aplicação, você pode fornecer ao Facade objetos de subsistema existentes ou forçar o Facade a criá-los por conta própria.
+    constructor(subsystem1?: Subsystem1, subsystem2?: Subsystem2) {
+        this.subsystem1 = subsystem1 || new Subsystem1();
+        this.subsystem2 = subsystem2 || new Subsystem2();
+    }
+
+//Os métodos do Façade são atalhos convenientes para a funcionalidade sofisticada dos subsistemas.
+// No entanto, os clientes obtêm apenas uma fração dos recursos de um subsistema.
+
+    public operation(): string {
+        let result = 'Facade initializes subsystems:\n';
+        result += this.subsystem1.operation1();
+        result += this.subsystem2.operation1();
+        result += 'Facade orders subsystems to perform the action:\n';
+        result += this.subsystem1.operationN();
+        result += this.subsystem2.operationZ();
+        return result;
+    }
+}
+
+/* O Subsistema pode aceitar solicitações da fachada ou diretamente do cliente.
+De qualquer forma, para o Subsistema, a Fachada é mais um cliente, e não é uma parte do Subsistema. */
+
+class Subsystem1 {
+    public operation1(): string {
+        return 'Subsystem1: Ready!\n';
+    }
+    // ...
+    public operationN(): string {
+        return 'Subsystem1: Go!\n';
+    }
+}
+
+// Algumas fachadas podem funcionar com vários subsistemas ao mesmo tempo.
+
+class Subsystem2 {
+    public operation1(): string {
+        return 'Subsystem2: Get ready!\n';
+    }
+    // ...
+    public operationZ(): string {
+        return 'Subsystem2: Fire!';
+    }
+}
+
+/* O código do cliente funciona com subsistemas complexos através de uma interface simples fornecido pela Fachada. 
+Quando uma fachada gerencia o ciclo de vida do subsistema, o cliente pode nem saber da existência do subsistema. 
+Esse permite que você mantenha a complexidade sob controle.
+
+function clientCode(facade: Facade) {
+    // ...
+    console.log(facade.operation());
+    // ...
+}
+
+/* O código cliente pode ter alguns dos objetos do subsistema já criados. Em neste caso, pode valer a pena inicializar a Fachada com estes objetos
+ao invés de deixar o Facade criar novas instâncias.     */
+
+const subsystem1 = new Subsystem1();
+const subsystem2 = new Subsystem2();
+const facade = new Facade(subsystem1, subsystem2);
+clientCode(facade);
+
+-> Output.txt
+Facade initializes subsystems:
+Subsystem1: Ready!
+Subsystem2: Get ready!
+Facade orders subsystems to perform the action:
+Subsystem1: Go!
+Subsystem2: Fire!
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Aplicabilidade
+- Use o padrão Facade quando precisar ter uma interface limitada, mas direta, para um subsistema complexo. Frequentemente, os subsistemas ficam mais 
+complexos com o tempo. Mesmo a aplicação de padrões de projeto geralmente leva à criação de mais classes. Um subsistema pode se tornar mais flexível e 
+fácil de reutilizar em vários contextos, mas a quantidade de configuração e código padrão que ele exige de um cliente cresce cada vez mais. 
+O Facade tenta corrigir esse problema fornecendo um atalho para os recursos mais usados ​​do subsistema que atendem à maioria dos requisitos do cliente.
+
+- Use a Fachada quando quiser estruturar um subsistema em camadas. Crie fachadas para definir pontos de entrada para cada nível de um subsistema. 
+Você pode reduzir o acoplamento entre vários subsistemas exigindo que eles se comuniquem apenas por meio de fachadas.
+Por exemplo, vamos retornar à nossa estrutura de conversão de vídeo. Ele pode ser dividido em duas camadas: relacionadas ao vídeo e ao áudio. 
+Para cada camada, você pode criar uma fachada e fazer com que as classes de cada camada se comuniquem por meio dessas fachadas. 
+Essa abordagem é muito semelhante ao padrão Mediador.
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+--> Prós
+- Você pode isolar seu código da complexidade de um subsistema.
+
+--> Contras
+- Uma fachada pode se tornar um objeto divino acoplado a todas as classes de um aplicativo.

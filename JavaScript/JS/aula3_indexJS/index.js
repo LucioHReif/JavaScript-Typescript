@@ -1,0 +1,1 @@
+console.log("Texto do script");
